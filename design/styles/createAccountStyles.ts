@@ -1,0 +1,55 @@
+import { StyleSheet } from 'react-native';
+
+import { colors } from '../theme';
+
+export const styles = StyleSheet.create({
+  safeArea: { backgroundColor: colors.background, flex: 1 },
+  page: { flexGrow: 1, padding: 24, paddingBottom: 36 },
+  header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  iconButton: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  hero: { alignItems: 'center', marginBottom: 28, marginTop: 30 },
+  sproutCircle: {
+    alignItems: 'center',
+    backgroundColor: colors.lavender,
+    borderRadius: 24,
+    height: 64,
+    justifyContent: 'center',
+    marginBottom: 18,
+    width: 64,
+  },
+  title: { color: colors.text, fontSize: 30, fontWeight: '800' },
+  subtitle: { color: colors.muted, fontSize: 14, marginTop: 8, textAlign: 'center' },
+  label: { color: colors.text, fontSize: 13, fontWeight: '700', marginBottom: 7 },
+  inputRow: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: colors.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+    paddingHorizontal: 14,
+  },
+  input: { color: colors.text, flex: 1, fontSize: 15, minHeight: 50 },
+  primaryButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 52,
+  },
+  primaryButtonText: { color: colors.white, fontSize: 15, fontWeight: '700' },
+  accountRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  accountText: { color: colors.muted, fontSize: 14 },
+  accountLink: { color: colors.primary, fontSize: 14, fontWeight: '700' },
+});
