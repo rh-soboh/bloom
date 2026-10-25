@@ -26,7 +26,6 @@ create table if not exists public.habit_completions (
   habit_id uuid not null references public.habits(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   completed_on date not null default current_date,
-  completed_at timestamptz not null default now(),
   unique (habit_id, user_id, completed_on)
 );
 
