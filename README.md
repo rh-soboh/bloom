@@ -12,7 +12,7 @@ The first iteration provides one complete working flow:
 4. Mark a habit complete or incomplete.
 5. Save the information in Supabase.
 
-The Figma frames used in this iteration are stored in [`docs/figma/iteration-1`](docs/figma/iteration-1). Future designs are added only when their features are implemented.
+The Figma frames used as references for this iteration are stored in [`docs/figma/iteration-1`](docs/figma/iteration-1). Some of those frames also show final-product elements—such as bottom navigation, points and Focus—that are deliberately planned for later iterations and are not yet implemented.
 
 ## Technology
 
