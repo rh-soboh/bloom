@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, LogOut, Plus, Sprout } from 'lucide-react-native';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
-  RefreshControl,
   SafeAreaView,
   ScrollView,
   Text,
@@ -31,15 +30,16 @@ function getToday(): string {
   return `${year}-${month}-${day}`;
 }
 
+function getCompletionForDate(habit: Habit, date: string) {
+  return habit.habit_completions.find((completion) => completion.completed_on === date);
+}
+
 export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
-  // LOGIC: Store the routines loaded from Supabase and the loading state.
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const today = getToday();
 
-  // LOGIC: Load this user's routines, habits, and completion records.
-  const loadRoutines = useCallback(async () => {
-    // Load routines, their habits, and each habit's completion records.
+  async function loadRoutines() {
     const { data, error } = await supabase!
       .from('routines')
       .select('id, name, habits(id, title, habit_completions(id, completed_on))')
@@ -49,17 +49,14 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
     if (error) Alert.alert('Could not load routines', error.message);
     else setRoutines((data ?? []) as Routine[]);
     setIsLoading(false);
-  }, [userId]);
+  }
 
   useEffect(() => {
     loadRoutines();
-  }, [loadRoutines]);
+  }, [userId]);
 
-  // LOGIC: Mark a habit complete, or remove today's completion.
   async function toggleHabit(habit: Habit) {
-    const todaysCompletion = habit.habit_completions.find(
-      (completion) => completion.completed_on === today,
-    );
+    const todaysCompletion = getCompletionForDate(habit, today);
 
     // Delete an existing completion or insert a new one for today.
     const result = todaysCompletion
@@ -88,19 +85,14 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
   );
 
   const completedCount = habits.filter(({ habit }) =>
-    habit.habit_completions.some((completion) => completion.completed_on === today),
+    Boolean(getCompletionForDate(habit, today)),
   ).length;
 
   const firstName = fullName?.trim().split(' ')[0] || 'there';
 
-  // DESIGN / LAYOUT: The JSX below describes the Today screen.
-  // Its visual styling is in design/styles/homeStyles.ts.
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl onRefresh={loadRoutines} refreshing={false} />}
-      >
+      <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Welcome, {firstName}!</Text>
@@ -160,9 +152,7 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
           </View>
         ) : (
           habits.map(({ habit, routineName }) => {
-            const isComplete = habit.habit_completions.some(
-              (completion) => completion.completed_on === today,
-            );
+            const isComplete = Boolean(getCompletionForDate(habit, today));
 
             return (
               <Pressable key={habit.id} onPress={() => toggleHabit(habit)} style={styles.habitCard}>

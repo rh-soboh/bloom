@@ -12,35 +12,28 @@ import { CreateRoutineScreen } from './screens/CreateRoutineScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 
-// Screen names are kept as simple strings instead of using a navigation library.
-type GuestScreen = 'welcome' | 'login' | 'create-account';
-type MemberScreen = 'today' | 'create-routine';
+// A small string state is enough for the five screens in Iteration 1.
+type Screen = 'welcome' | 'login' | 'create-account' | 'today' | 'create-routine';
 
 export default function App() {
-  // LOGIC / NAVIGATION: Remember the login session and current screen.
   const [session, setSession] = useState<Session | null>(null);
-  const [guestScreen, setGuestScreen] = useState<GuestScreen>('welcome');
-  const [memberScreen, setMemberScreen] = useState<MemberScreen>('today');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [isLoading, setIsLoading] = useState(true);
 
-  // LOGIC / AUTHENTICATION: Restore and monitor the Supabase session.
+  // Restore the saved session, then listen for login and logout changes.
   useEffect(() => {
-    // Supabase restores a previous login when the app opens.
     supabase?.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setCurrentScreen(data.session ? 'today' : 'welcome');
       setIsLoading(false);
     });
 
-    // Keep the screen in sync after sign in, sign up, or sign out.
     const listener = supabase?.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-
-      setMemberScreen('today');
-      setGuestScreen('welcome');
+      setCurrentScreen(newSession ? 'today' : 'welcome');
       setIsLoading(false);
     });
 
-    // Remove the listener when the component closes.
     return () => listener?.data.subscription.unsubscribe();
   }, []);
 
@@ -65,26 +58,25 @@ export default function App() {
     );
   }
 
-  // SCREEN SELECTION: Logged-out users see the welcome and account screens.
   if (!session) {
     return (
       <View style={styles.app}>
-        {guestScreen === 'welcome' && (
+        {currentScreen === 'welcome' && (
           <WelcomeScreen
-            onCreateAccount={() => setGuestScreen('create-account')}
-            onLogin={() => setGuestScreen('login')}
+            onCreateAccount={() => setCurrentScreen('create-account')}
+            onLogin={() => setCurrentScreen('login')}
           />
         )}
-        {guestScreen === 'login' && (
+        {currentScreen === 'login' && (
           <AuthScreen
-            onBack={() => setGuestScreen('welcome')}
-            onCreateAccount={() => setGuestScreen('create-account')}
+            onBack={() => setCurrentScreen('welcome')}
+            onCreateAccount={() => setCurrentScreen('create-account')}
           />
         )}
-        {guestScreen === 'create-account' && (
+        {currentScreen === 'create-account' && (
           <CreateAccountScreen
-            onBack={() => setGuestScreen('welcome')}
-            onLogin={() => setGuestScreen('login')}
+            onBack={() => setCurrentScreen('welcome')}
+            onLogin={() => setCurrentScreen('login')}
           />
         )}
         <StatusBar style="dark" />
@@ -95,19 +87,18 @@ export default function App() {
   // The display name was saved as authentication metadata during registration.
   const fullName = session.user.user_metadata.full_name as string | undefined;
 
-  // SCREEN SELECTION: Logged-in users see Today or Create Routine.
   return (
     <View style={styles.app}>
-      {memberScreen === 'today' ? (
-        <HomeScreen
-          fullName={fullName}
-          onCreateRoutine={() => setMemberScreen('create-routine')}
+      {currentScreen === 'create-routine' ? (
+        <CreateRoutineScreen
+          onCancel={() => setCurrentScreen('today')}
+          onSaved={() => setCurrentScreen('today')}
           userId={session.user.id}
         />
       ) : (
-        <CreateRoutineScreen
-          onCancel={() => setMemberScreen('today')}
-          onSaved={() => setMemberScreen('today')}
+        <HomeScreen
+          fullName={fullName}
+          onCreateRoutine={() => setCurrentScreen('create-routine')}
           userId={session.user.id}
         />
       )}

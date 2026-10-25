@@ -11,9 +11,7 @@ type Props = {
 };
 
 export function WelcomeScreen({ onCreateAccount, onLogin }: Props) {
-  // DESIGN / LAYOUT: This screen has no database logic. It displays the
-  // welcome design and calls App.tsx when either navigation button is pressed.
-  // Its visual styling is in design/styles/welcomeStyles.ts.
+  // The buttons ask App.tsx to change the current screen.
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.page}>

@@ -24,15 +24,12 @@ type Props = {
 };
 
 export function AuthScreen({ onBack, onCreateAccount }: Props) {
-  // LOGIC: Remember the login form values and whether a request is running.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // LOGIC: Validate the form and ask Supabase to log the user in.
   async function signIn() {
-    // Validate before sending a request to Supabase.
     if (!email.trim() || !password) {
       Alert.alert('Missing details', 'Enter your email and password.');
       return;
@@ -50,8 +47,6 @@ export function AuthScreen({ onBack, onCreateAccount }: Props) {
     if (error) Alert.alert('Could not sign in', error.message);
   }
 
-  // DESIGN / LAYOUT: The JSX below describes what appears on the screen.
-  // Its visual styling is in design/styles/authStyles.ts.
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -84,7 +79,7 @@ export function AuthScreen({ onBack, onCreateAccount }: Props) {
                 keyboardType="email-address"
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor="#9AA3B2"
+                placeholderTextColor={colors.placeholder}
                 style={styles.input}
                 value={email}
               />
@@ -97,7 +92,7 @@ export function AuthScreen({ onBack, onCreateAccount }: Props) {
                 autoCapitalize="none"
                 onChangeText={setPassword}
                 placeholder="Enter your password"
-                placeholderTextColor="#9AA3B2"
+                placeholderTextColor={colors.placeholder}
                 secureTextEntry={!showPassword}
                 style={styles.input}
                 value={password}

@@ -24,14 +24,12 @@ type Props = {
 };
 
 export function CreateAccountScreen({ onBack, onLogin }: Props) {
-  // LOGIC: These state variables remember the values entered in the form.
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // LOGIC: Validate the form and ask Supabase to create the account.
   async function signUp() {
     if (!fullName.trim() || !email.trim()) {
       Alert.alert('Missing details', 'Enter your name and email address.');
@@ -58,8 +56,6 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
     });
     setIsLoading(false);
 
-
-
     if (error) {
       Alert.alert('Could not create account', error.message);
     } else if (!data.session) {
@@ -70,8 +66,6 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
     }
   }
 
-  // DESIGN / LAYOUT: The JSX below describes what appears on the screen.
-  // Its colours, spacing and sizes are in design/styles/createAccountStyles.ts.
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -99,7 +93,7 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
               autoComplete="name"
               onChangeText={setFullName}
               placeholder="Your name"
-              placeholderTextColor="#9AA3B2"
+              placeholderTextColor={colors.placeholder}
               style={styles.input}
               value={fullName}
             />
@@ -111,7 +105,7 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="you@example.com"
-              placeholderTextColor="#9AA3B2"
+              placeholderTextColor={colors.placeholder}
               style={styles.input}
               value={email}
             />
@@ -121,7 +115,7 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
               autoCapitalize="none"
               onChangeText={setPassword}
               placeholder="At least 8 characters"
-              placeholderTextColor="#9AA3B2"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry
               style={styles.input}
               value={password}
@@ -132,7 +126,7 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
               autoCapitalize="none"
               onChangeText={setConfirmPassword}
               placeholder="Repeat your password"
-              placeholderTextColor="#9AA3B2"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry
               style={styles.input}
               value={confirmPassword}
@@ -161,7 +155,6 @@ export function CreateAccountScreen({ onBack, onLogin }: Props) {
 
 type FieldProps = { children: ReactNode; icon: ReactNode; label: string };
 
-// DESIGN HELPER: Reused by the four labelled inputs above.
 function Field({ children, icon, label }: FieldProps) {
   return (
     <View>

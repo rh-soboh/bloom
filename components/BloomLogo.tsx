@@ -9,7 +9,7 @@ type Props = {
 };
 
 export function BloomLogo({ compact = false }: Props) {
-  // DESIGN HELPER: Display the same Bloom logo at two possible sizes.
+  // The compact version is used in screen headers.
   const markSize = compact ? 38 : 48;
 
   return (

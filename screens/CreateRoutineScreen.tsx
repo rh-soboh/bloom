@@ -24,12 +24,10 @@ type Props = {
 };
 
 export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
-  // LOGIC: Remember the routine name, habit names, and saving state.
   const [routineName, setRoutineName] = useState('');
   const [habitNames, setHabitNames] = useState(['']);
   const [isSaving, setIsSaving] = useState(false);
 
-  // LOGIC: Update or remove individual habit fields in the form.
   function updateHabitName(index: number, value: string) {
     const updatedNames = [...habitNames];
     updatedNames[index] = value;
@@ -40,7 +38,6 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     setHabitNames(habitNames.filter((_, itemIndex) => itemIndex !== index));
   }
 
-  // LOGIC: Validate the form and save the routine and habits to Supabase.
   async function saveRoutine() {
     const cleanRoutineName = routineName.trim();
     const cleanHabitNames = habitNames.map((name) => name.trim()).filter(Boolean);
@@ -85,8 +82,6 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     onSaved();
   }
 
-  // DESIGN / LAYOUT: The JSX below describes the Create Routine screen.
-  // Its visual styling is in design/styles/createRoutineStyles.ts.
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -113,7 +108,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             maxLength={80}
             onChangeText={setRoutineName}
             placeholder="For example: Morning Routine"
-            placeholderTextColor="#9AA3B2"
+            placeholderTextColor={colors.placeholder}
             style={styles.input}
             value={routineName}
           />
@@ -130,7 +125,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
                 maxLength={120}
                 onChangeText={(value) => updateHabitName(index, value)}
                 placeholder={`Habit ${index + 1}`}
-                placeholderTextColor="#9AA3B2"
+                placeholderTextColor={colors.placeholder}
                 style={styles.habitInput}
                 value={habitName}
               />
