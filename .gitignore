@@ -37,6 +37,9 @@ yarn-error.*
 # Keep future Figma exports local until their iteration is implemented.
 docs/figma/future/
 
+# Keep generated iteration reports local.
+docs/reports/
+
 # Personal notes used to understand the codebase.
 explanation_of_things.txt
 
