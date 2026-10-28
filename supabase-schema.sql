@@ -8,6 +8,9 @@ create table if not exists public.routines (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null check (char_length(trim(name)) between 1 and 80),
+  schedule_days text[] not null default array['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+  scheduled_time time,
+  archived_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -16,6 +19,7 @@ create table if not exists public.habits (
   id uuid primary key default gen_random_uuid(),
   routine_id uuid not null references public.routines(id) on delete cascade,
   title text not null check (char_length(trim(title)) between 1 and 120),
+  archived_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -28,6 +32,20 @@ create table if not exists public.habit_completions (
   completed_on date not null default current_date,
   unique (habit_id, user_id, completed_on)
 );
+
+-- These statements also upgrade an existing Iteration 1 database.
+alter table public.routines
+  add column if not exists schedule_days text[] not null
+  default array['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+alter table public.routines
+  add column if not exists scheduled_time time;
+
+alter table public.routines
+  add column if not exists archived_at timestamptz;
+
+alter table public.habits
+  add column if not exists archived_at timestamptz;
 
 -- Indexes help Supabase find a user's data quickly.
 create index if not exists routines_user_id_index on public.routines(user_id);
