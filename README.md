@@ -1,25 +1,36 @@
-# Bloom — Habit & Routine Builder
+# Bloom - Habit & Routine Builder
 
-Bloom is a mobile app for creating routines, completing daily habits and tracking progress. It is a four-iteration final-year project built with Expo, React Native, TypeScript and Supabase.
+Bloom is a mobile app for creating routines, completing daily habits and reviewing progress. It is a four-iteration final-year project built with Expo, React Native, TypeScript and Supabase.
 
-## Iteration 1
+Current version: `0.2.0`
 
-The first iteration provides one complete working flow:
+## Completed work
 
-1. Create an account or log in.
-2. Create a routine containing one or more habits.
-3. View the habits on the Today screen.
-4. Mark a habit complete or incomplete.
-5. Save the information in Supabase.
+### Iteration 1 - Working core
 
-The Figma frames used as references for this iteration are stored in [`docs/figma/iteration-1`](docs/figma/iteration-1). Some of those frames also show final-product elements—such as bottom navigation, points and Focus—that are deliberately planned for later iterations and are not yet implemented.
+- Create an account and log in.
+- Create a routine containing one or more habits.
+- View today's habits.
+- Mark habits complete or incomplete.
+- Save all information in Supabase.
+
+### Iteration 2 - Routine management
+
+- Use bottom navigation to move between the main sections.
+- Create daily or weekly routine schedules.
+- Add an optional time to a routine.
+- Edit routine names, schedules and habits.
+- Delete a routine without removing its completion history.
+- Review completed habits in a monthly history.
+
+The Focus tab is visible but remains an Iteration 3 feature. The Figma references used for the completed work are stored in [`docs/figma/iteration-1`](docs/figma/iteration-1) and [`docs/figma/iteration-2`](docs/figma/iteration-2).
 
 ## Technology
 
-- **Expo and React Native:** build and run the mobile app.
-- **TypeScript:** application code.
-- **Supabase Authentication:** registration, login and logout.
-- **Supabase Database:** routines, habits and completion records.
+- Expo and React Native for the mobile application.
+- TypeScript for the application code.
+- Supabase Authentication for registration and login.
+- Supabase Database for routines, habits and completion records.
 
 ## Setup
 
@@ -29,14 +40,14 @@ The Figma frames used as references for this iteration are stored in [`docs/figm
 npm install
 ```
 
-2. Create a `.env` file using `.env.example` and add your Supabase details:
+2. Copy `.env.example` to `.env` and add the Supabase details:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-3. Run `supabase-schema.sql` in the Supabase SQL Editor.
+3. Run `supabase-schema.sql` in the Supabase SQL Editor. The complete file can be run again after updating from Iteration 1 because it safely adds the new schedule and archive columns.
 
 4. Start the app:
 
@@ -56,49 +67,49 @@ Check the TypeScript code with:
 npm run typecheck
 ```
 
-## Code to understand and explain
+## Important code
 
-These are the important logic files:
-
-| File | What it does |
+| File | Purpose |
 | --- | --- |
-| `App.tsx` | Restores the login session and decides which screen to display. |
-| `lib/supabase.ts` | Reads the environment variables and creates the Supabase connection. |
-| `screens/AuthScreen.tsx` | Logs in with an email and password. |
-| `screens/CreateAccountScreen.tsx` | Creates a Supabase account and saves the user's name. |
-| `screens/CreateRoutineScreen.tsx` | Stores a routine first, then stores its habits using the routine ID. |
-| `screens/HomeScreen.tsx` | Loads routines and habits and adds or removes completion records. |
-| `types.ts` | Describes the shape of the data used by TypeScript. |
-| `supabase-schema.sql` | Creates the three tables, their relationships and security rules. |
+| `App.tsx` | Restores the login session and controls the current screen. |
+| `components/BottomNavigation.tsx` | Changes between Today, Routines, Focus and Progress. |
+| `screens/CreateRoutineScreen.tsx` | Creates or edits a routine and its schedule. |
+| `screens/HomeScreen.tsx` | Displays today's scheduled habits and records completions. |
+| `screens/RoutinesScreen.tsx` | Lists, edits and deletes routines. |
+| `screens/ProgressScreen.tsx` | Displays monthly completion history. |
+| `lib/dates.ts` | Formats dates, weekdays, times and schedule labels. |
+| `lib/supabase.ts` | Creates the Supabase connection. |
+| `types.ts` | Describes the application data used by TypeScript. |
+| `supabase-schema.sql` | Creates the tables, relationships and security policies. |
 
-`WelcomeScreen.tsx`, `BloomLogo.tsx`, `design/theme.ts` and the files in `design/styles` mainly control appearance. You should know their general purpose, but you do not need to memorise every style value.
-
-Generated or configuration files such as `package-lock.json`, `node_modules`, `.expo`, `dist`, `tsconfig.json` and `app.json` do not contain the main application logic.
+The files in `design/styles` mainly control appearance and match the Figma designs.
 
 ## Database
 
 The database has three application tables:
 
 ```text
-routines → habits → habit_completions
+routines -> habits -> habit_completions
 ```
 
-- One user can have many routines.
-- One routine can have many habits.
-- A completion row records that a habit was completed on a particular date.
-- Row Level Security ensures users can access only their own information.
+- A user can have many routines.
+- A routine can have many habits.
+- A routine stores its selected weekdays and optional time.
+- A completion records a completed habit and date.
+- Deleted routines and habits are archived so their history remains available.
+- Row Level Security ensures users can only access their own information.
+
+Supabase Authentication stores the user accounts separately from these tables.
 
 ## Four-iteration plan
 
 | Iteration | Main result |
 | --- | --- |
-| **1 — Working core** | Authentication, create a routine, view habits and mark them complete. |
-| **2 — Management** | Edit, delete and schedule routines, plus completion history and bottom navigation. |
-| **3 — Motivation** | Streaks, points, levels, Focus Sessions and weekly progress. |
-| **4 — Final product** | Notifications, templates, profile, settings, testing, accessibility and final polish. |
-
-Each iteration will have its own implemented Figma designs in `docs/figma/iteration-N`.
+| **1 - Working core** | Authentication, create a routine, view habits and mark them complete. |
+| **2 - Management** | Edit, delete and schedule routines, completion history and bottom navigation. |
+| **3 - Motivation** | Streaks, points, levels, Focus Sessions and weekly progress. |
+| **4 - Final product** | Notifications, templates, profile, settings, testing, accessibility and final polish. |
 
 ## Licence
 
-Bloom is released under the MIT licence. The `LICENSE` file contains copyright notices for Shadrach Oboh and the original Expo starter project.
+Bloom is released under the MIT licence. See `LICENSE` for details.
