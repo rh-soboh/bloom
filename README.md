@@ -67,6 +67,12 @@ Check the TypeScript code with:
 npm run typecheck
 ```
 
+Run the automated helper tests with:
+
+```bash
+npm test
+```
+
 ## Important code
 
 | File | Purpose |
@@ -78,6 +84,7 @@ npm run typecheck
 | `screens/RoutinesScreen.tsx` | Lists, edits and deletes routines. |
 | `screens/ProgressScreen.tsx` | Displays monthly completion history. |
 | `lib/dates.ts` | Formats dates, weekdays, times and schedule labels. |
+| `__tests__/dates.test.ts` | Tests the reusable scheduling and date helpers. |
 | `lib/supabase.ts` | Creates the Supabase connection. |
 | `types.ts` | Describes the application data used by TypeScript. |
 | `supabase-schema.sql` | Creates the tables, relationships and security policies. |
