@@ -10,44 +10,48 @@ import {
   View,
 } from 'react-native';
 
+import { AppTab, BottomNavigation } from '../components/BottomNavigation';
 import { styles } from '../design/styles/homeStyles';
 import { colors } from '../design/theme';
+import { getDateKey, getDayCode } from '../lib/dates';
 import { supabase } from '../lib/supabase';
 import { Habit, Routine } from '../types';
 
 type Props = {
   fullName?: string;
   onCreateRoutine: () => void;
+  onNavigate: (tab: AppTab) => void;
   userId: string;
 };
-
-// Dates are stored as YYYY-MM-DD so each habit can only be completed once per day.
-function getToday(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function getCompletionForDate(habit: Habit, date: string) {
   return habit.habit_completions.find((completion) => completion.completed_on === date);
 }
 
-export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
+export function HomeScreen({ fullName, onCreateRoutine, onNavigate, userId }: Props) {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const today = getToday();
+  const today = getDateKey();
+  const todayCode = getDayCode();
 
   async function loadRoutines() {
     const { data, error } = await supabase!
       .from('routines')
-      .select('id, name, habits(id, title, habit_completions(id, completed_on))')
+      .select(
+        'id, name, schedule_days, scheduled_time, archived_at, habits(id, title, archived_at, habit_completions(id, completed_on))',
+      )
       .eq('user_id', userId)
+      .is('archived_at', null)
       .order('created_at', { ascending: true });
 
     if (error) Alert.alert('Could not load routines', error.message);
-    else setRoutines((data ?? []) as Routine[]);
+    else {
+      const activeRoutines = ((data ?? []) as Routine[]).map((routine) => ({
+        ...routine,
+        habits: routine.habits.filter((habit) => !habit.archived_at),
+      }));
+      setRoutines(activeRoutines);
+    }
     setIsLoading(false);
   }
 
@@ -80,9 +84,11 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
   }
 
   // Flatten the routines so the Today screen can display one list of habits.
-  const habits = routines.flatMap((routine) =>
-    routine.habits.map((habit) => ({ habit, routineName: routine.name })),
-  );
+  const habits = routines
+    .filter((routine) => routine.schedule_days.includes(todayCode))
+    .flatMap((routine) =>
+      routine.habits.map((habit) => ({ habit, routineName: routine.name })),
+    );
 
   const completedCount = habits.filter(({ habit }) =>
     Boolean(getCompletionForDate(habit, today)),
@@ -178,6 +184,7 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
           <Text style={styles.createButtonText}>Add Routine</Text>
         </Pressable>
       </ScrollView>
+      <BottomNavigation activeTab="today" onChange={onNavigate} />
     </SafeAreaView>
   );
 }
