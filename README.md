@@ -14,6 +14,12 @@ The first iteration provides one complete working flow:
 
 The Figma frames used as references for this iteration are stored in [`docs/figma/iteration-1`](docs/figma/iteration-1). Some of those frames also show final-product elements—such as bottom navigation, points and Focus—that are deliberately planned for later iterations and are not yet implemented.
 
+## Iteration 2 progress
+
+Day 1: added `schedule_type`, `selected_days` and optional `scheduled_time` to the SQL schema. Applying the query in Supabase and checking existing routines is still pending. The app does not use the schedule fields yet.
+
+The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
+
 ## Technology
 
 - **Expo and React Native:** build and run the mobile app.

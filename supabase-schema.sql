@@ -1,4 +1,4 @@
--- ITERATION 1 DATABASE
+-- BLOOM DATABASE
 
 -- pgcrypto supplies gen_random_uuid(), which creates secure unique IDs.
 create extension if not exists pgcrypto;
@@ -10,6 +10,15 @@ create table if not exists public.routines (
   name text not null check (char_length(trim(name)) between 1 and 80),
   created_at timestamptz not null default now()
 );
+
+-- Iteration 2: existing routines stay daily when these columns are first added.
+-- Weekdays use 0 for Sunday through 6 for Saturday. A null time means no set time.
+alter table public.routines
+  add column if not exists schedule_type text not null default 'daily'
+    check (schedule_type in ('daily', 'weekly')),
+  add column if not exists selected_days integer[] not null default '{}'
+    check (selected_days <@ array[0, 1, 2, 3, 4, 5, 6]),
+  add column if not exists scheduled_time time;
 
 -- A routine can contain many habits, but each habit belongs to one routine.
 create table if not exists public.habits (
