@@ -159,4 +159,3 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     </SafeAreaView>
   );
 }
-
