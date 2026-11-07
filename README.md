@@ -18,6 +18,8 @@ The Figma frames used as references for this iteration are stored in [`docs/figm
 
 Day 1: added `schedule_type`, `selected_days` and optional `scheduled_time` to the SQL schema. Applying the query in Supabase and checking existing routines is still pending. The app does not use the schedule fields yet.
 
+Day 2: added the matching fields to the `Routine` type in `types.ts`. These describe the schedule data without changing the app's behaviour.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
