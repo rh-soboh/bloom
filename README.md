@@ -20,6 +20,8 @@ Day 1: added `schedule_type`, `selected_days` and optional `scheduled_time` to t
 
 Day 2: added the matching fields to the `Routine` type in `types.ts`. These describe the schedule data without changing the app's behaviour.
 
+Day 3: added `lib/dates.ts` to format local dates, get weekdays and check whether a routine is scheduled for a date. These helpers will be connected to the screens in later tasks.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
@@ -77,6 +79,7 @@ These are the important logic files:
 | `screens/CreateRoutineScreen.tsx` | Stores a routine first, then stores its habits using the routine ID. |
 | `screens/HomeScreen.tsx` | Loads routines and habits and adds or removes completion records. |
 | `types.ts` | Describes the shape of the data used by TypeScript. |
+| `lib/dates.ts` | Formats local dates and checks daily or weekly schedules. |
 | `supabase-schema.sql` | Creates the three tables, their relationships and security rules. |
 
 `WelcomeScreen.tsx`, `BloomLogo.tsx`, `design/theme.ts` and the files in `design/styles` mainly control appearance. You should know their general purpose, but you do not need to memorise every style value.
