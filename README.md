@@ -22,6 +22,8 @@ Day 2: added the matching fields to the `Routine` type in `types.ts`. These desc
 
 Day 3: added `lib/dates.ts` to format local dates, get weekdays and check whether a routine is scheduled for a date. These helpers will be connected to the screens in later tasks.
 
+Day 4: added ten automated tests for date formatting, weekday numbers and daily or weekly schedules.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
@@ -66,6 +68,12 @@ Check the TypeScript code with:
 npm run typecheck
 ```
 
+Run the helper tests with:
+
+```bash
+npm test
+```
+
 ## Code to understand and explain
 
 These are the important logic files:
@@ -80,6 +88,7 @@ These are the important logic files:
 | `screens/HomeScreen.tsx` | Loads routines and habits and adds or removes completion records. |
 | `types.ts` | Describes the shape of the data used by TypeScript. |
 | `lib/dates.ts` | Formats local dates and checks daily or weekly schedules. |
+| `__tests__/dates.test.ts` | Checks the date and schedule helpers using fixed example dates. |
 | `supabase-schema.sql` | Creates the three tables, their relationships and security rules. |
 
 `WelcomeScreen.tsx`, `BloomLogo.tsx`, `design/theme.ts` and the files in `design/styles` mainly control appearance. You should know their general purpose, but you do not need to memorise every style value.
