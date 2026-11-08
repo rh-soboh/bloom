@@ -16,13 +16,15 @@ The Figma frames used as references for this iteration are stored in [`docs/figm
 
 ## Iteration 2 progress
 
-Day 1: added `schedule_type`, `selected_days` and optional `scheduled_time` to the SQL schema. Applying the query in Supabase and checking existing routines is still pending. The app does not use the schedule fields yet.
+Day 1: added `schedule_type`, `selected_days` and optional `scheduled_time` to the SQL schema. A read-only check has confirmed that all three columns are available in Supabase.
 
 Day 2: added the matching fields to the `Routine` type in `types.ts`. These describe the schedule data without changing the app's behaviour.
 
 Day 3: added `lib/dates.ts` to format local dates, get weekdays and check whether a routine is scheduled for a date. These helpers will be connected to the screens in later tasks.
 
 Day 4: added ten automated tests for date formatting, weekday numbers and daily or weekly schedules.
+
+Day 5: added an optional routine time in `HH:MM` format. Valid times are saved in `scheduled_time`; leaving the field blank saves `null`. The form layout follows the Figma time row, and three additional tests check time validation.
 
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 

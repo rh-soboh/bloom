@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, Clock3, GripVertical, Plus, Trash2 } from 'lucide-react-native';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { styles } from '../design/styles/createRoutineStyles';
 import { colors } from '../design/theme';
+import { isValidTime } from '../lib/dates';
 import { supabase } from '../lib/supabase';
 
 type Props = {
@@ -26,6 +27,7 @@ type Props = {
 export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
   const [routineName, setRoutineName] = useState('');
   const [habitNames, setHabitNames] = useState(['']);
+  const [scheduledTime, setScheduledTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   function updateHabitName(index: number, value: string) {
@@ -41,9 +43,15 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
   async function saveRoutine() {
     const cleanRoutineName = routineName.trim();
     const cleanHabitNames = habitNames.map((name) => name.trim()).filter(Boolean);
+    const cleanTime = scheduledTime.trim();
 
     if (!cleanRoutineName || cleanHabitNames.length === 0) {
       Alert.alert('Missing details', 'Enter a routine name and at least one habit.');
+      return;
+    }
+
+    if (cleanTime && !isValidTime(cleanTime)) {
+      Alert.alert('Invalid time', 'Use HH:MM in 24-hour format, such as 09:00, or leave the time blank.');
       return;
     }
 
@@ -52,7 +60,11 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     // Create the parent routine and return its generated ID.
     const { data: routine, error: routineError } = await supabase!
       .from('routines')
-      .insert({ name: cleanRoutineName, user_id: userId })
+      .insert({
+        name: cleanRoutineName,
+        user_id: userId,
+        scheduled_time: cleanTime || null,
+      })
       .select('id')
       .single();
 
@@ -141,6 +153,31 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             <Plus color={colors.primary} size={19} />
             <Text style={styles.addHabitText}>Add habit</Text>
           </Pressable>
+
+          <View style={styles.timeRow}>
+            <View style={styles.timeIcon}>
+              <Clock3 color={colors.primary} size={18} />
+            </View>
+            <View style={styles.timeDetails}>
+              <Text style={styles.timeTitle}>Routine time</Text>
+              <Text style={styles.timeHint}>Optional · 24-hour time</Text>
+            </View>
+            <TextInput
+              accessibilityHint="Enter a time such as 09:00, or leave blank."
+              accessibilityLabel="Routine time (optional)"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+              editable={!isSaving}
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              onChangeText={setScheduledTime}
+              placeholder="HH:MM"
+              placeholderTextColor={colors.placeholder}
+              style={styles.timeInput}
+              value={scheduledTime}
+            />
+            <ChevronRight color={colors.placeholder} size={16} />
+          </View>
 
           <View style={styles.actions}>
             <Pressable disabled={isSaving} onPress={saveRoutine} style={styles.saveButton}>

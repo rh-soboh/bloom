@@ -20,3 +20,8 @@ export function isRoutineScheduled(routine: Routine, date: Date = new Date()): b
 
   return routine.selected_days.includes(getWeekday(date));
 }
+
+// A two-digit hour (00–23), a colon and two-digit minutes (00–59).
+export function isValidTime(time: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+}

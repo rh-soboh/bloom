@@ -1,4 +1,4 @@
-import { getLocalDate, getWeekday, isRoutineScheduled } from '../lib/dates';
+import { getLocalDate, getWeekday, isRoutineScheduled, isValidTime } from '../lib/dates';
 import type { Routine } from '../types';
 
 const routine: Routine = {
@@ -67,5 +67,25 @@ describe('isRoutineScheduled', () => {
     const weeklyRoutine: Routine = { ...routine, schedule_type: 'weekly' };
 
     expect(isRoutineScheduled(weeklyRoutine, new Date(2026, 10, 9))).toBe(false);
+  });
+});
+
+describe('isValidTime', () => {
+  test('accepts 24-hour times including midnight and the last minute of the day', () => {
+    expect(isValidTime('00:00')).toBe(true);
+    expect(isValidTime('09:30')).toBe(true);
+    expect(isValidTime('23:59')).toBe(true);
+  });
+
+  test('rejects hours or minutes outside their allowed ranges', () => {
+    expect(isValidTime('24:00')).toBe(false);
+    expect(isValidTime('09:60')).toBe(false);
+  });
+
+  test('requires the HH:MM format', () => {
+    expect(isValidTime('9:30')).toBe(false);
+    expect(isValidTime('09:3')).toBe(false);
+    expect(isValidTime('09.30')).toBe(false);
+    expect(isValidTime('hello')).toBe(false);
   });
 });
