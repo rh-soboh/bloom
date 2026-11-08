@@ -26,6 +26,8 @@ Day 4: added ten automated tests for date formatting, weekday numbers and daily 
 
 Day 5: added an optional routine time in `HH:MM` format. Valid times are saved in `scheduled_time`; leaving the field blank saves `null`. The form layout follows the Figma time row, and three additional tests check time validation.
 
+Day 6: added Daily and Weekly choices to the routine form using the Figma segmented control. Daily is selected by default, and the chosen value is saved in `schedule_type`. Weekday selection is planned for Day 7; filtering today's habits is planned for Day 8.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology

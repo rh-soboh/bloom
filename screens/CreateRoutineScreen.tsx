@@ -26,6 +26,7 @@ type Props = {
 
 export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
   const [routineName, setRoutineName] = useState('');
+  const [scheduleType, setScheduleType] = useState<'daily' | 'weekly'>('daily');
   const [habitNames, setHabitNames] = useState(['']);
   const [scheduledTime, setScheduledTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +64,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
       .insert({
         name: cleanRoutineName,
         user_id: userId,
+        schedule_type: scheduleType,
         scheduled_time: cleanTime || null,
       })
       .select('id')
@@ -109,11 +111,6 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             <View style={styles.headerSpacer} />
           </View>
 
-          <View style={styles.dailyNotice}>
-            <Text style={styles.dailyNoticeTitle}>Daily routine</Text>
-            <Text style={styles.dailyNoticeText}>Weekly schedules will be added in Iteration 2.</Text>
-          </View>
-
           <Text style={styles.label}>Routine name</Text>
           <TextInput
             autoFocus
@@ -124,6 +121,32 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             style={styles.input}
             value={routineName}
           />
+
+          <Text style={styles.label}>Repeat</Text>
+          <View style={styles.scheduleOptions}>
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityState={{ checked: scheduleType === 'daily' }}
+              disabled={isSaving}
+              onPress={() => setScheduleType('daily')}
+              style={[styles.scheduleOption, scheduleType === 'daily' && styles.selectedScheduleOption]}
+            >
+              <Text style={[styles.scheduleText, scheduleType === 'daily' && styles.selectedScheduleText]}>
+                Daily
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityState={{ checked: scheduleType === 'weekly' }}
+              disabled={isSaving}
+              onPress={() => setScheduleType('weekly')}
+              style={[styles.scheduleOption, scheduleType === 'weekly' && styles.selectedScheduleOption]}
+            >
+              <Text style={[styles.scheduleText, scheduleType === 'weekly' && styles.selectedScheduleText]}>
+                Weekly
+              </Text>
+            </Pressable>
+          </View>
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Habits</Text>
