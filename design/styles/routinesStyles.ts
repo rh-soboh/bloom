@@ -31,6 +31,7 @@ export const styles = StyleSheet.create({
     height: 36, justifyContent: 'center', width: 36,
   },
   routineDetails: { flex: 1, gap: 4 },
+  editButton: { alignItems: 'center', height: 36, justifyContent: 'center', width: 24 },
   routineName: { color: colors.text, fontSize: 14, fontWeight: '700', lineHeight: 20 },
   schedule: { color: colors.muted, fontSize: 10, lineHeight: 14 },
   progressText: { color: colors.green },

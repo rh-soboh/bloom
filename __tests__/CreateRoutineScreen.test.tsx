@@ -3,12 +3,24 @@ import { render, screen, userEvent } from '@testing-library/react-native';
 
 import { supabase } from '../lib/supabase';
 import { CreateRoutineScreen } from '../screens/CreateRoutineScreen';
+import type { Routine } from '../types';
 
 jest.mock('../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 
 const insertRoutine = jest.fn();
 const insertHabits = jest.fn();
+const updateRoutine = jest.fn();
+const updateFilter = jest.fn();
+const updateSingle = jest.fn();
 const onSaved = jest.fn();
+
+const existingRoutine: Routine = {
+  id: 'existing-routine', name: 'Study', schedule_type: 'weekly', selected_days: [1, 3],
+  scheduled_time: '09:30:00',
+  habits: [{ id: 'existing-habit', title: 'Read notes', habit_completions: [
+    { id: 'completion-1', completed_on: '2026-11-09' },
+  ] }],
+};
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -18,8 +30,11 @@ beforeEach(() => {
     select: () => ({ single: async () => ({ data: { id: 'new-routine' }, error: null }) }),
   });
   insertHabits.mockResolvedValue({ error: null });
+  updateSingle.mockResolvedValue({ data: { id: existingRoutine.id }, error: null });
+  updateFilter.mockReturnValue({ eq: updateFilter, select: () => ({ single: updateSingle }) });
+  updateRoutine.mockReturnValue({ eq: updateFilter });
   (supabase!.from as jest.Mock).mockImplementation((table: string) => {
-    if (table === 'routines') return { insert: insertRoutine };
+    if (table === 'routines') return { insert: insertRoutine, update: updateRoutine };
     if (table === 'habits') return { insert: insertHabits };
     throw new Error(`Unexpected table: ${table}`);
   });
@@ -90,4 +105,98 @@ test('does not save weekly day selections after switching back to Daily', async 
   expect(insertRoutine).toHaveBeenCalledWith(expect.objectContaining({
     schedule_type: 'daily', selected_days: [],
   }));
+});
+
+test('fills the edit form from the routine and displays its habits read-only', async () => {
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+
+  expect(screen.getByText('Edit Routine')).toBeOnTheScreen();
+  expect(screen.getByLabelText('Routine name')).toHaveDisplayValue('Study');
+  expect(screen.getByLabelText('Routine time (optional)')).toHaveDisplayValue('09:30');
+  expect(screen.getByRole('radio', { name: 'Weekly', checked: true })).toBeOnTheScreen();
+  expect(screen.getByRole('checkbox', { name: 'Monday', checked: true })).toBeOnTheScreen();
+  expect(screen.getByRole('checkbox', { name: 'Wednesday', checked: true })).toBeOnTheScreen();
+  expect(screen.getByText('Read notes')).toBeOnTheScreen();
+  expect(screen.queryByPlaceholderText('Habit 1')).toBeNull();
+  expect(screen.queryByText('Add habit')).toBeNull();
+});
+
+test('updates the existing routine details without inserting or replacing habits', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.clear(screen.getByLabelText('Routine name'));
+  await user.type(screen.getByLabelText('Routine name'), 'Evening study');
+  await user.clear(screen.getByLabelText('Routine time (optional)'));
+  await user.type(screen.getByLabelText('Routine time (optional)'), '18:45');
+  await user.press(screen.getByRole('checkbox', { name: 'Monday' }));
+  await user.press(screen.getByRole('checkbox', { name: 'Friday' }));
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(updateRoutine).toHaveBeenCalledWith({
+    name: 'Evening study', schedule_type: 'weekly', selected_days: [3, 5], scheduled_time: '18:45',
+  });
+  expect(updateFilter).toHaveBeenNthCalledWith(1, 'id', existingRoutine.id);
+  expect(updateFilter).toHaveBeenNthCalledWith(2, 'user_id', 'user-1');
+  expect(insertRoutine).not.toHaveBeenCalled();
+  expect(insertHabits).not.toHaveBeenCalled();
+  expect(supabase!.from).toHaveBeenCalledTimes(1);
+  expect(onSaved).toHaveBeenCalledTimes(1);
+});
+
+test('can change a weekly routine to daily and remove its optional time', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.press(screen.getByRole('radio', { name: 'Daily' }));
+  await user.clear(screen.getByLabelText('Routine time (optional)'));
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(updateRoutine).toHaveBeenCalledWith({
+    name: 'Study', schedule_type: 'daily', selected_days: [], scheduled_time: null,
+  });
+});
+
+test('rejects a weekly edit if all weekdays are deselected', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.press(screen.getByRole('checkbox', { name: 'Monday' }));
+  await user.press(screen.getByRole('checkbox', { name: 'Wednesday' }));
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(Alert.alert).toHaveBeenCalledWith('Choose a day', expect.any(String));
+  expect(updateRoutine).not.toHaveBeenCalled();
+});
+
+test('rejects an invalid time before updating a routine', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.clear(screen.getByLabelText('Routine time (optional)'));
+  await user.type(screen.getByLabelText('Routine time (optional)'), '24:00');
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(Alert.alert).toHaveBeenCalledWith('Invalid time', expect.any(String));
+  expect(updateRoutine).not.toHaveBeenCalled();
+});
+
+test('keeps the form open if updating fails', async () => {
+  updateSingle.mockResolvedValueOnce({ data: null, error: { message: 'Update unavailable' } });
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(Alert.alert).toHaveBeenCalledWith('Could not update routine', 'Update unavailable');
+  expect(onSaved).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Save Changes' })).toBeEnabled();
+});
+
+test('cancels an edit without writing changes', async () => {
+  const onCancel = jest.fn();
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={onCancel} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.clear(screen.getByLabelText('Routine name'));
+  await user.type(screen.getByLabelText('Routine name'), 'Unsaved changes');
+  await user.press(screen.getByRole('button', { name: 'Cancel' }));
+
+  expect(onCancel).toHaveBeenCalledTimes(1);
+  expect(supabase!.from).not.toHaveBeenCalled();
+  expect(onSaved).not.toHaveBeenCalled();
 });

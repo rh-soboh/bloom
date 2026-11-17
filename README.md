@@ -36,6 +36,10 @@ Day 9: added Today and Routines bottom tabs. `App.tsx` controls navigation, and 
 
 Day 10: Routines now loads the signed-in user's routines, grouped as Daily and Weekly. Cards show the schedule, habit count and today's progress. Empty and failed-loading states are handled separately.
 
+Day 11: the pencil button opens the existing routine form with its saved details. Saving updates that routine's name, schedule and time without replacing its habits or completion records. Cancelling leaves the data unchanged, and session refreshes keep unsaved form entries open. Habit editing is the next task.
+
+Days 12–15 remain: edit habits, archive routines, add monthly history and complete the final review. Iteration 2 is not finished yet.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
@@ -80,7 +84,7 @@ Check the TypeScript code with:
 npm run typecheck
 ```
 
-Run the helper tests with:
+Run the automated tests with:
 
 ```bash
 npm test
@@ -96,11 +100,13 @@ These are the important logic files:
 | `lib/supabase.ts` | Reads the environment variables and creates the Supabase connection. |
 | `screens/AuthScreen.tsx` | Logs in with an email and password. |
 | `screens/CreateAccountScreen.tsx` | Creates a Supabase account and saves the user's name. |
-| `screens/CreateRoutineScreen.tsx` | Stores a routine first, then stores its habits using the routine ID. |
-| `screens/HomeScreen.tsx` | Loads routines and habits and adds or removes completion records. |
+| `screens/CreateRoutineScreen.tsx` | Creates routines and their habits, or updates an existing routine's details. |
+| `screens/HomeScreen.tsx` | Shows today's scheduled habits and adds or removes completion records. |
+| `screens/RoutinesScreen.tsx` | Loads all routines, groups them by schedule and opens the edit form. |
+| `components/BottomNavigation.tsx` | Displays Today and Routines tabs and passes the choice to `App.tsx`. |
 | `types.ts` | Describes the shape of the data used by TypeScript. |
 | `lib/dates.ts` | Formats local dates and checks daily or weekly schedules. |
-| `__tests__/dates.test.ts` | Checks the date and schedule helpers using fixed example dates. |
+| `__tests__/` | Tests date helpers, screen interactions, navigation and database request data using mocks. |
 | `supabase-schema.sql` | Creates the three tables, their relationships and security rules. |
 
 `WelcomeScreen.tsx`, `BloomLogo.tsx`, `design/theme.ts` and the files in `design/styles` mainly control appearance. You should know their general purpose, but you do not need to memorise every style value.

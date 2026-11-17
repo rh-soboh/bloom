@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Lightbulb, Plus, Sun } from 'lucide-react-native';
+import { CalendarDays, Lightbulb, Pencil, Plus, Sun } from 'lucide-react-native';
 import { ActivityIndicator, AppState, Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { styles } from '../design/styles/routinesStyles';
@@ -10,10 +10,11 @@ import type { Routine } from '../types';
 
 type Props = {
   onCreateRoutine: () => void;
+  onEditRoutine: (routine: Routine) => void;
   userId: string;
 };
 
-export function RoutinesScreen({ onCreateRoutine, userId }: Props) {
+export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props) {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -124,6 +125,15 @@ export function RoutinesScreen({ onCreateRoutine, userId }: Props) {
                             <Text style={styles.routineName}>{routine.name}</Text>
                             <Text style={styles.schedule}>{getScheduleLabel(routine)}</Text>
                           </View>
+                          <Pressable
+                            accessibilityLabel={`Edit ${routine.name}`}
+                            accessibilityRole="button"
+                            hitSlop={8}
+                            onPress={() => onEditRoutine(routine)}
+                            style={styles.editButton}
+                          >
+                            <Pencil color={colors.muted} size={16} />
+                          </Pressable>
                         </View>
                         <View style={styles.sectionHeader}>
                           <Text style={styles.detail}>{habitCount} {habitCount === 1 ? 'habit' : 'habits'}</Text>

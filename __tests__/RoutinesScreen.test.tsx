@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 test('shows all routines, including those not due today, with their schedule and habit counts', async () => {
-  await render(<RoutinesScreen onCreateRoutine={jest.fn()} userId="user-1" />);
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={jest.fn()} userId="user-1" />);
 
   expect(filterByUser).toHaveBeenCalledWith('user_id', 'user-1');
   expect(screen.getByText('Morning')).toBeOnTheScreen();
@@ -64,7 +64,7 @@ test('offers routine creation when the user has no routines', async () => {
   order.mockResolvedValue({ data: [], error: null });
   const onCreateRoutine = jest.fn();
   const user = userEvent.setup();
-  await render(<RoutinesScreen onCreateRoutine={onCreateRoutine} userId="user-1" />);
+  await render(<RoutinesScreen onCreateRoutine={onCreateRoutine} onEditRoutine={jest.fn()} userId="user-1" />);
   await user.press(screen.getByRole('button', { name: 'Create your first routine' }));
 
   expect(screen.getByText('Your next chapter starts here.')).toBeOnTheScreen();
@@ -74,7 +74,7 @@ test('offers routine creation when the user has no routines', async () => {
 test('shows a loading error instead of an empty state and allows a retry', async () => {
   order.mockResolvedValueOnce({ data: null, error: { message: 'Connection unavailable' } });
   const user = userEvent.setup();
-  await render(<RoutinesScreen onCreateRoutine={jest.fn()} userId="user-1" />);
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={jest.fn()} userId="user-1" />);
 
   expect(screen.getByRole('alert')).toHaveTextContent('Connection unavailable');
   expect(screen.queryByText('Your next chapter starts here.')).toBeNull();
@@ -85,11 +85,20 @@ test('shows a loading error instead of an empty state and allows a retry', async
 });
 
 test('refreshes progress and the scheduled day when the app returns', async () => {
-  await render(<RoutinesScreen onCreateRoutine={jest.fn()} userId="user-1" />);
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={jest.fn()} userId="user-1" />);
   jest.setSystemTime(new Date(2026, 10, 10, 12));
   await act(async () => onAppStateChange('active'));
 
   expect(screen.getByText('0/1 done today')).toBeOnTheScreen();
   expect(screen.getByText('0/2 done today')).toBeOnTheScreen();
   expect(screen.queryByText('Not scheduled today')).toBeNull();
+});
+
+test('passes the selected routine to the edit form', async () => {
+  const onEditRoutine = jest.fn();
+  const user = userEvent.setup();
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={onEditRoutine} userId="user-1" />);
+  await user.press(screen.getByRole('button', { name: 'Edit Study' }));
+
+  expect(onEditRoutine).toHaveBeenCalledWith(routines[1]);
 });

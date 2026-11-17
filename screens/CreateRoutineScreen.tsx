@@ -17,19 +17,21 @@ import { styles } from '../design/styles/createRoutineStyles';
 import { colors } from '../design/theme';
 import { isValidTime, weekdays } from '../lib/dates';
 import { supabase } from '../lib/supabase';
+import type { Routine } from '../types';
 
 type Props = {
   onCancel: () => void;
   onSaved: () => void;
+  routine?: Routine;
   userId: string;
 };
 
-export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
-  const [routineName, setRoutineName] = useState('');
-  const [scheduleType, setScheduleType] = useState<'daily' | 'weekly'>('daily');
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Props) {
+  const [routineName, setRoutineName] = useState(routine?.name ?? '');
+  const [scheduleType, setScheduleType] = useState<'daily' | 'weekly'>(routine?.schedule_type ?? 'daily');
+  const [selectedDays, setSelectedDays] = useState<number[]>(routine?.selected_days ?? []);
   const [habitNames, setHabitNames] = useState(['']);
-  const [scheduledTime, setScheduledTime] = useState('');
+  const [scheduledTime, setScheduledTime] = useState(routine?.scheduled_time?.slice(0, 5) ?? '');
   const [isSaving, setIsSaving] = useState(false);
 
   function updateHabitName(index: number, value: string) {
@@ -55,7 +57,12 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     const cleanHabitNames = habitNames.map((name) => name.trim()).filter(Boolean);
     const cleanTime = scheduledTime.trim();
 
-    if (!cleanRoutineName || cleanHabitNames.length === 0) {
+    if (!cleanRoutineName) {
+      Alert.alert('Missing details', 'Enter a routine name.');
+      return;
+    }
+
+    if (!routine && cleanHabitNames.length === 0) {
       Alert.alert('Missing details', 'Enter a routine name and at least one habit.');
       return;
     }
@@ -72,15 +79,35 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
 
     setIsSaving(true);
 
+    const routineDetails = {
+      name: cleanRoutineName,
+      schedule_type: scheduleType,
+      selected_days: scheduleType === 'weekly' ? selectedDays : [],
+      scheduled_time: cleanTime || null,
+    };
+
+    // Editing updates the existing row, leaving its habits and completions intact.
+    if (routine) {
+      const { error } = await supabase!
+        .from('routines')
+        .update(routineDetails)
+        .eq('id', routine.id)
+        .eq('user_id', userId)
+        .select('id')
+        .single();
+
+      setIsSaving(false);
+      if (error) Alert.alert('Could not update routine', error.message);
+      else onSaved();
+      return;
+    }
+
     // Create the parent routine and return its generated ID.
-    const { data: routine, error: routineError } = await supabase!
+    const { data: newRoutine, error: routineError } = await supabase!
       .from('routines')
       .insert({
-        name: cleanRoutineName,
+        ...routineDetails,
         user_id: userId,
-        schedule_type: scheduleType,
-        selected_days: scheduleType === 'weekly' ? selectedDays : [],
-        scheduled_time: cleanTime || null,
       })
       .select('id')
       .single();
@@ -93,7 +120,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
 
     // Each child habit uses the new routine ID as its foreign key.
     const newHabits = cleanHabitNames.map((title) => ({
-      routine_id: routine.id,
+      routine_id: newRoutine.id,
       title,
     }));
 
@@ -101,7 +128,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
 
     if (habitsError) {
       // Remove the empty parent routine if its habits failed to save.
-      await supabase!.from('routines').delete().eq('id', routine.id);
+      await supabase!.from('routines').delete().eq('id', newRoutine.id);
       setIsSaving(false);
       Alert.alert('Could not save habits', habitsError.message);
       return;
@@ -119,16 +146,18 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
       >
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Pressable accessibilityLabel="Go back" onPress={onCancel} style={styles.backButton}>
+            <Pressable accessibilityLabel="Go back" accessibilityRole="button" disabled={isSaving} onPress={onCancel} style={styles.backButton}>
               <ArrowLeft color={colors.text} size={22} />
             </Pressable>
-            <Text style={styles.title}>Create Routine</Text>
+            <Text style={styles.title}>{routine ? 'Edit Routine' : 'Create Routine'}</Text>
             <View style={styles.headerSpacer} />
           </View>
 
           <Text style={styles.label}>Routine name</Text>
           <TextInput
+            accessibilityLabel="Routine name"
             autoFocus
+            editable={!isSaving}
             maxLength={80}
             onChangeText={setRoutineName}
             placeholder="For example: Morning Routine"
@@ -189,10 +218,14 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Habits</Text>
-            <Text style={styles.habitCount}>{habitNames.length}</Text>
+            <Text style={styles.habitCount}>{routine ? routine.habits.length : habitNames.length}</Text>
           </View>
 
-          {habitNames.map((habitName, index) => (
+          {routine ? routine.habits.map((habit) => (
+            <View key={habit.id} style={styles.habitRow}>
+              <Text style={styles.savedHabitTitle}>{habit.title}</Text>
+            </View>
+          )) : habitNames.map((habitName, index) => (
             <View key={index} style={styles.habitRow}>
               <GripVertical color="#A5ADBA" size={20} />
               <TextInput
@@ -211,10 +244,12 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             </View>
           ))}
 
-          <Pressable onPress={() => setHabitNames([...habitNames, ''])} style={styles.addHabitButton}>
-            <Plus color={colors.primary} size={19} />
-            <Text style={styles.addHabitText}>Add habit</Text>
-          </Pressable>
+          {!routine && (
+            <Pressable onPress={() => setHabitNames([...habitNames, ''])} style={styles.addHabitButton}>
+              <Plus color={colors.primary} size={19} />
+              <Text style={styles.addHabitText}>Add habit</Text>
+            </Pressable>
+          )}
 
           <View style={styles.timeRow}>
             <View style={styles.timeIcon}>
@@ -246,10 +281,10 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
               {isSaving ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.saveButtonText}>Save Routine</Text>
+                <Text style={styles.saveButtonText}>{routine ? 'Save Changes' : 'Save Routine'}</Text>
               )}
             </Pressable>
-            <Pressable disabled={isSaving} onPress={onCancel} style={styles.cancelButton}>
+            <Pressable accessibilityRole="button" disabled={isSaving} onPress={onCancel} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
           </View>

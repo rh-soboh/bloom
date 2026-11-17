@@ -101,6 +101,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   habitInput: { color: colors.text, flex: 1, fontSize: 15, minHeight: 52 },
+  savedHabitTitle: { color: colors.text, flex: 1, fontSize: 15, paddingVertical: 16 },
   addHabitButton: {
     alignItems: 'center',
     borderColor: colors.primary,
