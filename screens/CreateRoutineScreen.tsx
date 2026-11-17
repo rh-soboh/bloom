@@ -15,7 +15,7 @@ import {
 
 import { styles } from '../design/styles/createRoutineStyles';
 import { colors } from '../design/theme';
-import { isValidTime } from '../lib/dates';
+import { isValidTime, weekdays } from '../lib/dates';
 import { supabase } from '../lib/supabase';
 
 type Props = {
@@ -27,6 +27,7 @@ type Props = {
 export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
   const [routineName, setRoutineName] = useState('');
   const [scheduleType, setScheduleType] = useState<'daily' | 'weekly'>('daily');
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [habitNames, setHabitNames] = useState(['']);
   const [scheduledTime, setScheduledTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +42,14 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
     setHabitNames(habitNames.filter((_, itemIndex) => itemIndex !== index));
   }
 
+  function toggleDay(day: number) {
+    setSelectedDays(
+      selectedDays.includes(day)
+        ? selectedDays.filter((selectedDay) => selectedDay !== day)
+        : [...selectedDays, day],
+    );
+  }
+
   async function saveRoutine() {
     const cleanRoutineName = routineName.trim();
     const cleanHabitNames = habitNames.map((name) => name.trim()).filter(Boolean);
@@ -48,6 +57,11 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
 
     if (!cleanRoutineName || cleanHabitNames.length === 0) {
       Alert.alert('Missing details', 'Enter a routine name and at least one habit.');
+      return;
+    }
+
+    if (scheduleType === 'weekly' && selectedDays.length === 0) {
+      Alert.alert('Choose a day', 'Select at least one weekday for this routine.');
       return;
     }
 
@@ -65,6 +79,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
         name: cleanRoutineName,
         user_id: userId,
         schedule_type: scheduleType,
+        selected_days: scheduleType === 'weekly' ? selectedDays : [],
         scheduled_time: cleanTime || null,
       })
       .select('id')
@@ -122,30 +137,54 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
             value={routineName}
           />
 
-          <Text style={styles.label}>Repeat</Text>
-          <View style={styles.scheduleOptions}>
-            <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ checked: scheduleType === 'daily' }}
-              disabled={isSaving}
-              onPress={() => setScheduleType('daily')}
-              style={[styles.scheduleOption, scheduleType === 'daily' && styles.selectedScheduleOption]}
-            >
-              <Text style={[styles.scheduleText, scheduleType === 'daily' && styles.selectedScheduleText]}>
-                Daily
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ checked: scheduleType === 'weekly' }}
-              disabled={isSaving}
-              onPress={() => setScheduleType('weekly')}
-              style={[styles.scheduleOption, scheduleType === 'weekly' && styles.selectedScheduleOption]}
-            >
-              <Text style={[styles.scheduleText, scheduleType === 'weekly' && styles.selectedScheduleText]}>
-                Weekly
-              </Text>
-            </Pressable>
+          <View style={styles.frequencySection}>
+            <Text style={styles.label}>Repeat</Text>
+            <View style={styles.scheduleOptions}>
+              <Pressable
+                accessibilityRole="radio"
+                accessibilityState={{ checked: scheduleType === 'daily' }}
+                disabled={isSaving}
+                onPress={() => setScheduleType('daily')}
+                style={[styles.scheduleOption, scheduleType === 'daily' && styles.selectedScheduleOption]}
+              >
+                <Text style={[styles.scheduleText, scheduleType === 'daily' && styles.selectedScheduleText]}>
+                  Daily
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="radio"
+                accessibilityState={{ checked: scheduleType === 'weekly' }}
+                disabled={isSaving}
+                onPress={() => setScheduleType('weekly')}
+                style={[styles.scheduleOption, scheduleType === 'weekly' && styles.selectedScheduleOption]}
+              >
+                <Text style={[styles.scheduleText, scheduleType === 'weekly' && styles.selectedScheduleText]}>
+                  Weekly
+                </Text>
+              </Pressable>
+            </View>
+            {scheduleType === 'weekly' && (
+              <View style={styles.weekdays}>
+                {weekdays.map((day) => {
+                  const isSelected = selectedDays.includes(day.value);
+                  return (
+                    <Pressable
+                      key={day.value}
+                      accessibilityLabel={day.name}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
+                      disabled={isSaving}
+                      onPress={() => toggleDay(day.value)}
+                      style={[styles.dayButton, isSelected && styles.selectedDayButton]}
+                    >
+                      <Text style={[styles.dayText, isSelected && styles.selectedDayText]}>
+                        {day.name[0]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
           <View style={styles.sectionHeader}>
@@ -203,7 +242,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, userId }: Props) {
           </View>
 
           <View style={styles.actions}>
-            <Pressable disabled={isSaving} onPress={saveRoutine} style={styles.saveButton}>
+            <Pressable accessibilityRole="button" disabled={isSaving} onPress={saveRoutine} style={styles.saveButton}>
               {isSaving ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
