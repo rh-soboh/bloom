@@ -34,6 +34,8 @@ Day 8: Today now displays only scheduled habits and counts progress against that
 
 Day 9: added Today and Routines bottom tabs. `App.tsx` controls navigation, and the routine form returns to the section it was opened from.
 
+Day 10: Routines now loads the signed-in user's routines, grouped as Daily and Weekly. Cards show the schedule, habit count and today's progress. Empty and failed-loading states are handled separately.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology

@@ -31,6 +31,16 @@ export function isRoutineScheduled(routine: Routine, date: Date = new Date()): b
   return routine.selected_days.includes(getWeekday(date));
 }
 
+export function getScheduleLabel(routine: Routine): string {
+  const days = weekdays
+    .filter((day) => routine.selected_days.includes(day.value))
+    .map((day) => day.name.slice(0, 3));
+  const label = routine.schedule_type === 'daily' ? 'Every day' : days.join(', ') || 'No days selected';
+
+  // Supabase returns time as HH:MM:SS; the screen only needs hours and minutes.
+  return routine.scheduled_time ? `${label} · ${routine.scheduled_time.slice(0, 5)}` : label;
+}
+
 // A two-digit hour (00–23), a colon and two-digit minutes (00–59).
 export function isValidTime(time: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(time);

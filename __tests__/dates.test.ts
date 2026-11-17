@@ -1,4 +1,4 @@
-import { getLocalDate, getWeekday, isRoutineScheduled, isValidTime } from '../lib/dates';
+import { getLocalDate, getScheduleLabel, getWeekday, isRoutineScheduled, isValidTime } from '../lib/dates';
 import type { Routine } from '../types';
 
 const routine: Routine = {
@@ -87,5 +87,24 @@ describe('isValidTime', () => {
     expect(isValidTime('09:3')).toBe(false);
     expect(isValidTime('09.30')).toBe(false);
     expect(isValidTime('hello')).toBe(false);
+  });
+});
+
+describe('getScheduleLabel', () => {
+  test('describes a daily routine without a time', () => {
+    expect(getScheduleLabel(routine)).toBe('Every day');
+  });
+
+  test('sorts weekly days from Monday to Sunday', () => {
+    expect(getScheduleLabel({ ...routine, schedule_type: 'weekly', selected_days: [0, 5, 1] }))
+      .toBe('Mon, Fri, Sun');
+  });
+
+  test('displays hours and minutes from a Supabase time', () => {
+    expect(getScheduleLabel({ ...routine, scheduled_time: '09:30:00' })).toBe('Every day · 09:30');
+  });
+
+  test('identifies older weekly routines that have no selected days', () => {
+    expect(getScheduleLabel({ ...routine, schedule_type: 'weekly' })).toBe('No days selected');
   });
 });
