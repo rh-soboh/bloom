@@ -32,6 +32,8 @@ Day 7: added weekday buttons for weekly routines. At least one day must be selec
 
 Day 8: Today now displays only scheduled habits and counts progress against that list. Returning to the app refreshes the date and habits. Screen tests cover filtering, completion dates and the empty state.
 
+Day 9: added Today and Routines bottom tabs. `App.tsx` controls navigation, and the routine form returns to the section it was opened from.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
