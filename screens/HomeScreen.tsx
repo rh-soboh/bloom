@@ -3,6 +3,7 @@ import { Check, LogOut, Plus, Sprout } from 'lucide-react-native';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -12,6 +13,7 @@ import {
 
 import { styles } from '../design/styles/homeStyles';
 import { colors } from '../design/theme';
+import { getLocalDate, isRoutineScheduled } from '../lib/dates';
 import { supabase } from '../lib/supabase';
 import { Habit, Routine } from '../types';
 
@@ -21,15 +23,6 @@ type Props = {
   userId: string;
 };
 
-// Dates are stored as YYYY-MM-DD so each habit can only be completed once per day.
-function getToday(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function getCompletionForDate(habit: Habit, date: string) {
   return habit.habit_completions.find((completion) => completion.completed_on === date);
 }
@@ -37,12 +30,17 @@ function getCompletionForDate(habit: Habit, date: string) {
 export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const today = getToday();
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const today = getLocalDate(currentDate);
 
   async function loadRoutines() {
+    setCurrentDate(new Date());
     const { data, error } = await supabase!
       .from('routines')
-      .select('id, name, habits(id, title, habit_completions(id, completed_on))')
+      .select(`
+        id, name, schedule_type, selected_days, scheduled_time,
+        habits(id, title, habit_completions(id, completed_on))
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
@@ -53,6 +51,10 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
 
   useEffect(() => {
     loadRoutines();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') loadRoutines();
+    });
+    return () => subscription.remove();
   }, [userId]);
 
   async function toggleHabit(habit: Habit) {
@@ -79,8 +81,9 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
     );
   }
 
-  // Flatten the routines so the Today screen can display one list of habits.
-  const habits = routines.flatMap((routine) =>
+  // Only routines due today contribute habits or progress to this screen.
+  const scheduledRoutines = routines.filter((routine) => isRoutineScheduled(routine, currentDate));
+  const habits = scheduledRoutines.flatMap((routine) =>
     routine.habits.map((habit) => ({ habit, routineName: routine.name })),
   );
 
@@ -97,7 +100,7 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
           <View>
             <Text style={styles.title}>Welcome, {firstName}!</Text>
             <Text style={styles.date}>
-              {new Date().toLocaleDateString('en-IE', {
+              {currentDate.toLocaleDateString('en-IE', {
                 day: 'numeric',
                 month: 'long',
                 weekday: 'long',
@@ -127,7 +130,9 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
             <Text style={styles.summaryTitle}>Today’s progress</Text>
             <Text style={styles.summaryDescription}>
               {habits.length === 0
-                ? 'Create your first routine to begin.'
+                ? routines.length === 0
+                  ? 'Create your first routine to begin.'
+                  : 'Nothing is scheduled for today.'
                 : completedCount === habits.length
                   ? 'Everything is complete. Well done!'
                   : 'Small steps still count. Keep going!'}
@@ -136,7 +141,7 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily habits</Text>
+          <Text style={styles.sectionTitle}>Today's habits</Text>
           <Text style={styles.sectionCount}>{completedCount} of {habits.length}</Text>
         </View>
 
@@ -145,9 +150,13 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
             <View style={styles.emptyIcon}>
               <Sprout color={colors.primary} size={28} />
             </View>
-            <Text style={styles.emptyTitle}>Your fresh start begins here</Text>
+            <Text style={styles.emptyTitle}>
+              {routines.length === 0 ? 'Your fresh start begins here' : 'No habits scheduled today'}
+            </Text>
             <Text style={styles.emptyText}>
-              Create a routine and add the small habits you want to complete each day.
+              {routines.length === 0
+                ? 'Create a routine and add the small habits you want to complete each day.'
+                : 'Your routines will appear here on their scheduled days.'}
             </Text>
           </View>
         ) : (
@@ -155,7 +164,14 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
             const isComplete = Boolean(getCompletionForDate(habit, today));
 
             return (
-              <Pressable key={habit.id} onPress={() => toggleHabit(habit)} style={styles.habitCard}>
+              <Pressable
+                key={habit.id}
+                accessibilityLabel={habit.title}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isComplete }}
+                onPress={() => toggleHabit(habit)}
+                style={styles.habitCard}
+              >
                 <View style={styles.habitIcon}>
                   <Sprout color={colors.primary} size={22} />
                 </View>

@@ -30,6 +30,8 @@ Day 6: added Daily and Weekly choices to the routine form using the Figma segmen
 
 Day 7: added weekday buttons for weekly routines. At least one day must be selected, and the chosen day numbers are saved in `selected_days`.
 
+Day 8: Today now displays only scheduled habits and counts progress against that list. Returning to the app refreshes the date and habits. Screen tests cover filtering, completion dates and the empty state.
+
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
 ## Technology
