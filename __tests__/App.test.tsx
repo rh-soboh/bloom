@@ -18,6 +18,7 @@ jest.mock('../screens/WelcomeScreen', () => ({ WelcomeScreen: () => null }));
 
 let savedRoutine: Routine;
 const order = jest.fn();
+const progressOrder = jest.fn();
 const updateRoutine = jest.fn();
 const signedInSession = { user: { id: 'user-1', user_metadata: { full_name: 'Shadrach Oboh' } } };
 
@@ -36,6 +37,14 @@ beforeEach(() => {
     habits: [{ id: 'habit-1', title: 'Read notes', habit_completions: [] }],
   };
   order.mockImplementation(async () => ({ data: [savedRoutine], error: null }));
+  const routineQuery = { eq: () => routineQuery, order };
+  const progressQuery = {
+    eq: () => progressQuery,
+    gte: () => progressQuery,
+    lt: () => progressQuery,
+    order: progressOrder,
+  };
+  progressOrder.mockResolvedValue({ data: [], error: null });
   updateRoutine.mockImplementation((details) => {
     const query = {
       eq: () => query,
@@ -46,10 +55,10 @@ beforeEach(() => {
     };
     return query;
   });
-  (supabase!.from as jest.Mock).mockReturnValue({
-    select: () => ({ eq: () => ({ order }) }),
+  (supabase!.from as jest.Mock).mockImplementation((table: string) => ({
+    select: () => table === 'habit_completions' ? progressQuery : routineQuery,
     update: updateRoutine,
-  });
+  }));
 });
 
 afterEach(() => {
@@ -69,6 +78,15 @@ test('restores the session and returns to the tab where creation was opened', as
     await user.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByRole('tab', { name: tab, selected: true })).toBeOnTheScreen();
   }
+});
+
+test('opens the Progress screen from the bottom navigation', async () => {
+  const user = userEvent.setup();
+  await render(<App />);
+  await user.press(screen.getByRole('tab', { name: 'Progress' }));
+
+  expect(screen.getByRole('tab', { name: 'Progress', selected: true })).toBeOnTheScreen();
+  expect(screen.getByText('No completed habits yet')).toBeOnTheScreen();
 });
 
 test('saves an edit and reloads the changed routine in Routines and Today', async () => {

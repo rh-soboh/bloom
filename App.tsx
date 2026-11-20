@@ -11,6 +11,7 @@ import { AuthScreen } from './screens/AuthScreen';
 import { CreateAccountScreen } from './screens/CreateAccountScreen';
 import { CreateRoutineScreen } from './screens/CreateRoutineScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { ProgressScreen } from './screens/ProgressScreen';
 import { RoutinesScreen } from './screens/RoutinesScreen';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import type { Routine } from './types';
@@ -126,6 +127,8 @@ export default function App() {
               onEditRoutine={openEditRoutine}
               userId={session.user.id}
             />
+          ) : currentScreen === 'progress' ? (
+            <ProgressScreen userId={session.user.id} />
           ) : (
             <HomeScreen
               fullName={fullName}
@@ -134,7 +137,7 @@ export default function App() {
             />
           )}
           <BottomNavigation
-            activeTab={currentScreen === 'routines' ? 'routines' : 'today'}
+            activeTab={currentScreen === 'routines' || currentScreen === 'progress' ? currentScreen : 'today'}
             onTabChange={setCurrentScreen}
           />
         </>

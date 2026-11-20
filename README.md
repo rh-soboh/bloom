@@ -38,11 +38,13 @@ Day 10: Routines now loads the signed-in user's routines, grouped as Daily and W
 
 Day 11: the pencil button opens the existing routine form with its saved details. Saving updates that routine's name, schedule and time without replacing its completion records. Cancelling leaves the data unchanged, and session refreshes keep unsaved form entries open.
 
-Day 12: the routine form now lets you rename, add or remove habits when editing. It keeps the same routine and existing habit IDs, so completion records remain attached. A routine must keep at least one named habit.
+Day 12: the routine form now lets you rename, add or remove habits when editing. Existing habits keep their IDs and completion records when renamed. Added and removed habits create or delete their own rows. A routine must keep at least one named habit.
 
 Day 13: routines can be archived and restored. Archived routines are hidden from Today and the active list, while their habits and completion history stay in the database. The schema uses one archive field on the routine because its habits belong to it.
 
-Days 14–15 remain: add monthly history and complete the final review. Iteration 2 is not finished yet. Run the updated `supabase-schema.sql` to add the archive field before using this feature.
+Day 14: added a Progress tab showing the signed-in user's completed habits for the current month, grouped by date. Archived routines remain included in this history.
+
+Day 15 remains: complete the final review. Iteration 2 is not finished yet. Run the updated `supabase-schema.sql` to add the archive field before using archive and restore.
 
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 
@@ -107,7 +109,8 @@ These are the important logic files:
 | `screens/CreateRoutineScreen.tsx` | Creates routines and their habits, or updates an existing routine's details. |
 | `screens/HomeScreen.tsx` | Shows today's scheduled habits and adds or removes completion records. |
 | `screens/RoutinesScreen.tsx` | Loads all routines, groups them by schedule and opens the edit form. |
-| `components/BottomNavigation.tsx` | Displays Today and Routines tabs and passes the choice to `App.tsx`. |
+| `screens/ProgressScreen.tsx` | Shows this month's completed habits grouped by date. |
+| `components/BottomNavigation.tsx` | Displays Today, Routines and Progress tabs and passes the choice to `App.tsx`. |
 | `types.ts` | Describes the shape of the data used by TypeScript. |
 | `lib/dates.ts` | Formats local dates and checks daily or weekly schedules. |
 | `__tests__/` | Tests date helpers, screen interactions, navigation and database request data using mocks. |

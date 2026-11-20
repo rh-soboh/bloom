@@ -1,10 +1,10 @@
-import { CircleCheck, Layers } from 'lucide-react-native';
+import { ChartColumnIncreasing, CircleCheck, Layers } from 'lucide-react-native';
 import { Pressable, SafeAreaView, Text, View } from 'react-native';
 
 import { styles } from '../design/styles/bottomNavigationStyles';
 import { colors } from '../design/theme';
 
-export type MainTab = 'today' | 'routines';
+export type MainTab = 'today' | 'routines' | 'progress';
 
 type Props = {
   activeTab: MainTab;
@@ -36,6 +36,17 @@ export function BottomNavigation({ activeTab, onTabChange }: Props) {
             <Layers color={activeTab === 'routines' ? colors.primary : colors.muted} size={20} />
           </View>
           <Text style={[styles.label, activeTab === 'routines' && styles.selectedLabel]}>Routines</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'progress' }}
+          onPress={() => onTabChange('progress')}
+          style={styles.tab}
+        >
+          <View style={[styles.icon, activeTab === 'progress' && styles.selectedIcon]}>
+            <ChartColumnIncreasing color={activeTab === 'progress' ? colors.primary : colors.muted} size={20} />
+          </View>
+          <Text style={[styles.label, activeTab === 'progress' && styles.selectedLabel]}>Progress</Text>
         </Pressable>
       </View>
     </SafeAreaView>
