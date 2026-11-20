@@ -89,12 +89,12 @@ Complete one day at a time. Only commit the work after it runs correctly and you
 
 - Load the existing habits into the edit form.
 - Allow habit names to be changed, added or removed.
-- Test editing without creating a duplicate routine.
+- Keep existing habit IDs while renaming habits; new and removed habits use their own database rows.
 - Suggested commit: `feat: edit habits in a routine`
 
 ### Day 13: Archive routines
 
-- Add an `is_archived` field to routines and habits.
+- Add an `is_archived` field to routines. Habits follow their routine, so a second archive field is unnecessary.
 - Add an Archive action to the routines list.
 - Hide archived items from Today and Routines while keeping their completion history.
 - Suggested commit: `feat: archive routines and habits`

@@ -36,9 +36,11 @@ Day 9: added Today and Routines bottom tabs. `App.tsx` controls navigation, and 
 
 Day 10: Routines now loads the signed-in user's routines, grouped as Daily and Weekly. Cards show the schedule, habit count and today's progress. Empty and failed-loading states are handled separately.
 
-Day 11: the pencil button opens the existing routine form with its saved details. Saving updates that routine's name, schedule and time without replacing its habits or completion records. Cancelling leaves the data unchanged, and session refreshes keep unsaved form entries open. Habit editing is the next task.
+Day 11: the pencil button opens the existing routine form with its saved details. Saving updates that routine's name, schedule and time without replacing its completion records. Cancelling leaves the data unchanged, and session refreshes keep unsaved form entries open.
 
-Days 12–15 remain: edit habits, archive routines, add monthly history and complete the final review. Iteration 2 is not finished yet.
+Day 12: the routine form now lets you rename, add or remove habits when editing. It keeps the same routine and existing habit IDs, so completion records remain attached. A routine must keep at least one named habit.
+
+Days 13–15 remain: archive routines, add monthly history and complete the final review. Iteration 2 is not finished yet.
 
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 

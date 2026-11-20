@@ -26,22 +26,71 @@ type Props = {
   userId: string;
 };
 
+type HabitDraft = { id?: string; title: string };
+
 export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Props) {
   const [routineName, setRoutineName] = useState(routine?.name ?? '');
   const [scheduleType, setScheduleType] = useState<'daily' | 'weekly'>(routine?.schedule_type ?? 'daily');
   const [selectedDays, setSelectedDays] = useState<number[]>(routine?.selected_days ?? []);
-  const [habitNames, setHabitNames] = useState(['']);
+  const [habitDrafts, setHabitDrafts] = useState<HabitDraft[]>(() =>
+    routine ? routine.habits.map(({ id, title }) => ({ id, title })) : [{ title: '' }],
+  );
   const [scheduledTime, setScheduledTime] = useState(routine?.scheduled_time?.slice(0, 5) ?? '');
   const [isSaving, setIsSaving] = useState(false);
 
-  function updateHabitName(index: number, value: string) {
-    const updatedNames = [...habitNames];
-    updatedNames[index] = value;
-    setHabitNames(updatedNames);
+  function updateHabitName(index: number, title: string) {
+    setHabitDrafts(habitDrafts.map((habit, itemIndex) =>
+      itemIndex === index ? { ...habit, title } : habit,
+    ));
   }
 
   function removeHabit(index: number) {
-    setHabitNames(habitNames.filter((_, itemIndex) => itemIndex !== index));
+    setHabitDrafts(habitDrafts.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  async function updateExistingHabits() {
+    if (!routine) return false;
+
+    const savedHabits = habitDrafts.filter((habit): habit is HabitDraft & { id: string } => Boolean(habit.id));
+    const newHabits = habitDrafts.filter((habit) => !habit.id).map((habit) => ({
+      routine_id: routine.id,
+      title: habit.title.trim(),
+    }));
+    const removedIds = routine.habits
+      .filter((habit) => !habitDrafts.some((draft) => draft.id === habit.id))
+      .map((habit) => habit.id);
+
+    // Update the saved rows first, then add new rows and remove deleted ones.
+    for (const habit of savedHabits) {
+      const { error } = await supabase!.from('habits')
+        .update({ title: habit.title.trim() })
+        .eq('id', habit.id)
+        .eq('routine_id', routine.id);
+      if (error) {
+        Alert.alert('Could not update habit', error.message);
+        return false;
+      }
+    }
+
+    if (newHabits.length > 0) {
+      const { error } = await supabase!.from('habits').insert(newHabits);
+      if (error) {
+        Alert.alert('Could not add habits', error.message);
+        return false;
+      }
+    }
+
+    if (removedIds.length > 0) {
+      const { error } = await supabase!.from('habits').delete()
+        .in('id', removedIds)
+        .eq('routine_id', routine.id);
+      if (error) {
+        Alert.alert('Could not remove habits', error.message);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function toggleDay(day: number) {
@@ -54,7 +103,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
 
   async function saveRoutine() {
     const cleanRoutineName = routineName.trim();
-    const cleanHabitNames = habitNames.map((name) => name.trim()).filter(Boolean);
+    const cleanHabits = habitDrafts.map((habit) => ({ ...habit, title: habit.title.trim() }));
     const cleanTime = scheduledTime.trim();
 
     if (!cleanRoutineName) {
@@ -62,8 +111,8 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
       return;
     }
 
-    if (!routine && cleanHabitNames.length === 0) {
-      Alert.alert('Missing details', 'Enter a routine name and at least one habit.');
+    if (cleanHabits.length === 0 || cleanHabits.some((habit) => !habit.title)) {
+      Alert.alert('Check the habits', 'Keep at least one habit and enter a name for each one.');
       return;
     }
 
@@ -86,7 +135,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
       scheduled_time: cleanTime || null,
     };
 
-    // Editing updates the existing row, leaving its habits and completions intact.
+    // Editing keeps the same routine ID and changes its schedule details.
     if (routine) {
       const { error } = await supabase!
         .from('routines')
@@ -96,9 +145,15 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
         .select('id')
         .single();
 
+      if (error) {
+        setIsSaving(false);
+        Alert.alert('Could not update routine', error.message);
+        return;
+      }
+
+      const habitsSaved = await updateExistingHabits();
       setIsSaving(false);
-      if (error) Alert.alert('Could not update routine', error.message);
-      else onSaved();
+      if (habitsSaved) onSaved();
       return;
     }
 
@@ -119,7 +174,7 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
     }
 
     // Each child habit uses the new routine ID as its foreign key.
-    const newHabits = cleanHabitNames.map((title) => ({
+    const newHabits = cleanHabits.map(({ title }) => ({
       routine_id: newRoutine.id,
       title,
     }));
@@ -218,38 +273,34 @@ export function CreateRoutineScreen({ onCancel, onSaved, routine, userId }: Prop
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Habits</Text>
-            <Text style={styles.habitCount}>{routine ? routine.habits.length : habitNames.length}</Text>
+            <Text style={styles.habitCount}>{habitDrafts.length}</Text>
           </View>
 
-          {routine ? routine.habits.map((habit) => (
-            <View key={habit.id} style={styles.habitRow}>
-              <Text style={styles.savedHabitTitle}>{habit.title}</Text>
-            </View>
-          )) : habitNames.map((habitName, index) => (
-            <View key={index} style={styles.habitRow}>
+          {habitDrafts.map((habit, index) => (
+            <View key={habit.id ?? `new-${index}`} style={styles.habitRow}>
               <GripVertical color="#A5ADBA" size={20} />
               <TextInput
+                accessibilityLabel={`Habit ${index + 1}`}
+                editable={!isSaving}
                 maxLength={120}
                 onChangeText={(value) => updateHabitName(index, value)}
                 placeholder={`Habit ${index + 1}`}
                 placeholderTextColor={colors.placeholder}
                 style={styles.habitInput}
-                value={habitName}
+                value={habit.title}
               />
-              {habitNames.length > 1 && (
-                <Pressable accessibilityLabel={`Remove habit ${index + 1}`} onPress={() => removeHabit(index)}>
+              {habitDrafts.length > 1 && (
+                <Pressable accessibilityLabel={`Remove habit ${index + 1}`} accessibilityRole="button" disabled={isSaving} onPress={() => removeHabit(index)}>
                   <Trash2 color="#D15C5C" size={20} />
                 </Pressable>
               )}
             </View>
           ))}
 
-          {!routine && (
-            <Pressable onPress={() => setHabitNames([...habitNames, ''])} style={styles.addHabitButton}>
-              <Plus color={colors.primary} size={19} />
-              <Text style={styles.addHabitText}>Add habit</Text>
-            </Pressable>
-          )}
+          <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => setHabitDrafts([...habitDrafts, { title: '' }])} style={styles.addHabitButton}>
+            <Plus color={colors.primary} size={19} />
+            <Text style={styles.addHabitText}>Add habit</Text>
+          </Pressable>
 
           <View style={styles.timeRow}>
             <View style={styles.timeIcon}>

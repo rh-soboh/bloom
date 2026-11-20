@@ -9,9 +9,12 @@ jest.mock('../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 
 const insertRoutine = jest.fn();
 const insertHabits = jest.fn();
+const habitInsert = insertHabits;
 const updateRoutine = jest.fn();
 const updateFilter = jest.fn();
 const updateSingle = jest.fn();
+const habitUpdate = jest.fn();
+const habitDelete = jest.fn();
 const onSaved = jest.fn();
 
 const existingRoutine: Routine = {
@@ -33,9 +36,12 @@ beforeEach(() => {
   updateSingle.mockResolvedValue({ data: { id: existingRoutine.id }, error: null });
   updateFilter.mockReturnValue({ eq: updateFilter, select: () => ({ single: updateSingle }) });
   updateRoutine.mockReturnValue({ eq: updateFilter });
+  habitUpdate.mockReturnValue({ eq: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }) });
+  habitDelete.mockReturnValue({ in: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }) });
+  habitInsert.mockResolvedValue({ error: null });
   (supabase!.from as jest.Mock).mockImplementation((table: string) => {
     if (table === 'routines') return { insert: insertRoutine, update: updateRoutine };
-    if (table === 'habits') return { insert: insertHabits };
+    if (table === 'habits') return { insert: habitInsert, update: habitUpdate, delete: habitDelete };
     throw new Error(`Unexpected table: ${table}`);
   });
 });
@@ -107,7 +113,7 @@ test('does not save weekly day selections after switching back to Daily', async 
   }));
 });
 
-test('fills the edit form from the routine and displays its habits read-only', async () => {
+test('fills the edit form with existing habit names', async () => {
   await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
 
   expect(screen.getByText('Edit Routine')).toBeOnTheScreen();
@@ -116,9 +122,8 @@ test('fills the edit form from the routine and displays its habits read-only', a
   expect(screen.getByRole('radio', { name: 'Weekly', checked: true })).toBeOnTheScreen();
   expect(screen.getByRole('checkbox', { name: 'Monday', checked: true })).toBeOnTheScreen();
   expect(screen.getByRole('checkbox', { name: 'Wednesday', checked: true })).toBeOnTheScreen();
-  expect(screen.getByText('Read notes')).toBeOnTheScreen();
-  expect(screen.queryByPlaceholderText('Habit 1')).toBeNull();
-  expect(screen.queryByText('Add habit')).toBeNull();
+  expect(screen.getByLabelText('Habit 1')).toHaveDisplayValue('Read notes');
+  expect(screen.getByRole('button', { name: 'Add habit' })).toBeOnTheScreen();
 });
 
 test('updates the existing routine details without inserting or replacing habits', async () => {
@@ -138,8 +143,11 @@ test('updates the existing routine details without inserting or replacing habits
   expect(updateFilter).toHaveBeenNthCalledWith(1, 'id', existingRoutine.id);
   expect(updateFilter).toHaveBeenNthCalledWith(2, 'user_id', 'user-1');
   expect(insertRoutine).not.toHaveBeenCalled();
-  expect(insertHabits).not.toHaveBeenCalled();
-  expect(supabase!.from).toHaveBeenCalledTimes(1);
+  expect(habitUpdate).toHaveBeenCalledWith({ title: 'Read notes' });
+  expect(habitInsert).not.toHaveBeenCalled();
+  expect(habitDelete).not.toHaveBeenCalled();
+  expect(supabase!.from).toHaveBeenNthCalledWith(1, 'routines');
+  expect(supabase!.from).toHaveBeenNthCalledWith(2, 'habits');
   expect(onSaved).toHaveBeenCalledTimes(1);
 });
 
@@ -199,4 +207,48 @@ test('cancels an edit without writing changes', async () => {
   expect(onCancel).toHaveBeenCalledTimes(1);
   expect(supabase!.from).not.toHaveBeenCalled();
   expect(onSaved).not.toHaveBeenCalled();
+});
+
+test('renames, adds and removes existing habits on the same routine', async () => {
+  const user = userEvent.setup();
+  const routineWithTwoHabits: Routine = {
+    ...existingRoutine,
+    habits: [
+      existingRoutine.habits[0],
+      { id: 'habit-to-remove', title: 'Stretch', habit_completions: [] },
+    ],
+  };
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={routineWithTwoHabits} userId="user-1" />);
+  await user.clear(screen.getByLabelText('Habit 1'));
+  await user.type(screen.getByLabelText('Habit 1'), 'Read a chapter');
+  await user.press(screen.getByRole('button', { name: 'Add habit' }));
+  await user.type(screen.getByLabelText('Habit 3'), 'Drink water');
+  await user.press(screen.getByRole('button', { name: 'Remove habit 2' }));
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(habitUpdate).toHaveBeenCalledWith({ title: 'Read a chapter' });
+  expect(habitInsert).toHaveBeenCalledWith([{ routine_id: existingRoutine.id, title: 'Drink water' }]);
+  expect(habitDelete).toHaveBeenCalledTimes(1);
+  expect(onSaved).toHaveBeenCalledTimes(1);
+  expect(insertRoutine).not.toHaveBeenCalled();
+});
+
+test('does not save when a habit name is blank', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  await user.clear(screen.getByLabelText('Habit 1'));
+  await user.press(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(Alert.alert).toHaveBeenCalledWith('Check the habits', expect.any(String));
+  expect(updateRoutine).not.toHaveBeenCalled();
+});
+
+test('does not remove the final remaining habit', async () => {
+  const user = userEvent.setup();
+  await render(<CreateRoutineScreen onCancel={jest.fn()} onSaved={onSaved} routine={existingRoutine} userId="user-1" />);
+  expect(screen.queryByRole('button', { name: 'Remove habit 1' })).toBeNull();
+  await user.press(screen.getByRole('button', { name: 'Add habit' }));
+  await user.press(screen.getByRole('button', { name: 'Remove habit 1' }));
+  expect(screen.getByLabelText('Habit 1')).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Habit 2')).toBeNull();
 });
