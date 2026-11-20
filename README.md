@@ -40,7 +40,9 @@ Day 11: the pencil button opens the existing routine form with its saved details
 
 Day 12: the routine form now lets you rename, add or remove habits when editing. It keeps the same routine and existing habit IDs, so completion records remain attached. A routine must keep at least one named habit.
 
-Days 13–15 remain: archive routines, add monthly history and complete the final review. Iteration 2 is not finished yet.
+Day 13: routines can be archived and restored. Archived routines are hidden from Today and the active list, while their habits and completion history stay in the database. The schema uses one archive field on the routine because its habits belong to it.
+
+Days 14–15 remain: add monthly history and complete the final review. Iteration 2 is not finished yet. Run the updated `supabase-schema.sql` to add the archive field before using this feature.
 
 The daily tasks are in [ITERATION_2_PLAN.md](ITERATION_2_PLAN.md).
 

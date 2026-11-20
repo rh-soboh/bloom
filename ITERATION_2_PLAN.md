@@ -97,7 +97,7 @@ Complete one day at a time. Only commit the work after it runs correctly and you
 - Add an `is_archived` field to routines. Habits follow their routine, so a second archive field is unnecessary.
 - Add an Archive action to the routines list.
 - Hide archived items from Today and Routines while keeping their completion history.
-- Suggested commit: `feat: archive routines and habits`
+- Suggested commit: `feat: archive routines`
 
 ### Day 14: Add simple progress history
 

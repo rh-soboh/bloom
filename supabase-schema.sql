@@ -20,6 +20,10 @@ alter table public.routines
     check (selected_days <@ array[0, 1, 2, 3, 4, 5, 6]),
   add column if not exists scheduled_time time;
 
+-- Archiving hides a routine while keeping its habits and completion history.
+alter table public.routines
+  add column if not exists is_archived boolean not null default false;
+
 -- A routine can contain many habits, but each habit belongs to one routine.
 create table if not exists public.habits (
   id uuid primary key default gen_random_uuid(),

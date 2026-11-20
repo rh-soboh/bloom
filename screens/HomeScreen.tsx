@@ -38,10 +38,11 @@ export function HomeScreen({ fullName, onCreateRoutine, userId }: Props) {
     const { data, error } = await supabase!
       .from('routines')
       .select(`
-        id, name, schedule_type, selected_days, scheduled_time,
+        id, name, schedule_type, selected_days, scheduled_time, is_archived,
         habits(id, title, habit_completions(id, completed_on))
       `)
       .eq('user_id', userId)
+      .eq('is_archived', false)
       .order('created_at', { ascending: true });
 
     if (error) Alert.alert('Could not load routines', error.message);

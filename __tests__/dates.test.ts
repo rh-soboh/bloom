@@ -7,6 +7,7 @@ const routine: Routine = {
   schedule_type: 'daily',
   selected_days: [],
   scheduled_time: null,
+  is_archived: false,
   habits: [],
 };
 

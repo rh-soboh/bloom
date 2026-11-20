@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Lightbulb, Pencil, Plus, Sun } from 'lucide-react-native';
-import { ActivityIndicator, AppState, Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Archive, ArchiveRestore, CalendarDays, Lightbulb, Pencil, Plus, Sun } from 'lucide-react-native';
+import { ActivityIndicator, Alert, AppState, Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { styles } from '../design/styles/routinesStyles';
 import { colors } from '../design/theme';
@@ -19,6 +19,7 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [showArchived, setShowArchived] = useState(false);
   const today = getLocalDate(currentDate);
 
   async function loadRoutines() {
@@ -26,7 +27,7 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
     const { data, error } = await supabase!
       .from('routines')
       .select(`
-        id, name, schedule_type, selected_days, scheduled_time,
+        id, name, schedule_type, selected_days, scheduled_time, is_archived,
         habits(id, title, habit_completions(id, completed_on))
       `)
       .eq('user_id', userId)
@@ -46,13 +47,36 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
   }, [userId]);
 
   const isEmpty = !isLoading && !errorMessage && routines.length === 0;
+  const visibleRoutines = routines.filter((routine) => routine.is_archived === showArchived);
+  const archivedCount = routines.filter((routine) => routine.is_archived).length;
+
+  async function changeArchiveStatus(routine: Routine, isArchived: boolean) {
+    const { error } = await supabase!.from('routines')
+      .update({ is_archived: isArchived })
+      .eq('id', routine.id)
+      .eq('user_id', userId);
+
+    if (error) Alert.alert('Could not update routine', error.message);
+    else loadRoutines();
+  }
+
+  function confirmArchive(routine: Routine) {
+    Alert.alert(
+      'Archive routine?',
+      `“${routine.name}” will be hidden from Today. You can restore it later.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Archive', style: 'destructive', onPress: () => changeArchiveStatus(routine, true) },
+      ],
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>My Routines</Text>
-          {!isEmpty && (
+          {!isEmpty && !showArchived && (
             <Pressable accessibilityLabel="Create routine" accessibilityRole="button" onPress={onCreateRoutine} style={styles.addButton}>
               <Plus color={colors.primary} size={22} />
             </Pressable>
@@ -61,6 +85,19 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
         <Text style={styles.subtitle}>
           {isEmpty ? 'Your space for small, meaningful steps.' : 'A little structure. A lot more possibility.'}
         </Text>
+
+        {!isLoading && !errorMessage && routines.length > 0 && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={showArchived ? 'Show active routines' : 'Show archived routines'}
+            onPress={() => setShowArchived(!showArchived)}
+            style={styles.archiveToggle}
+          >
+            <Text style={styles.archiveToggleText}>
+              {showArchived ? 'Show active routines' : `Show archived (${archivedCount})`}
+            </Text>
+          </Pressable>
+        )}
 
         {isLoading ? (
           <ActivityIndicator color={colors.primary} size="large" />
@@ -94,10 +131,20 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
               </Text>
             </View>
           </>
+        ) : visibleRoutines.length === 0 ? (
+          <View style={styles.message}>
+            <Text style={styles.emptyTitle}>{showArchived ? 'No archived routines' : 'No active routines'}</Text>
+            {!showArchived && (
+              <Pressable accessibilityRole="button" onPress={onCreateRoutine} style={styles.createButton}>
+                <Plus color={colors.white} size={18} />
+                <Text style={styles.buttonText}>Create Routine</Text>
+              </Pressable>
+            )}
+          </View>
         ) : (
           <>
             {(['daily', 'weekly'] as const).map((scheduleType) => {
-              const group = routines.filter((routine) => routine.schedule_type === scheduleType);
+              const group = visibleRoutines.filter((routine) => routine.schedule_type === scheduleType);
               if (group.length === 0) return null;
 
               return (
@@ -125,23 +172,28 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
                             <Text style={styles.routineName}>{routine.name}</Text>
                             <Text style={styles.schedule}>{getScheduleLabel(routine)}</Text>
                           </View>
-                          <Pressable
-                            accessibilityLabel={`Edit ${routine.name}`}
-                            accessibilityRole="button"
-                            hitSlop={8}
-                            onPress={() => onEditRoutine(routine)}
-                            style={styles.editButton}
-                          >
-                            <Pencil color={colors.muted} size={16} />
-                          </Pressable>
+                          {!showArchived ? (
+                            <>
+                              <Pressable accessibilityLabel={`Edit ${routine.name}`} accessibilityRole="button" hitSlop={8} onPress={() => onEditRoutine(routine)} style={styles.editButton}>
+                                <Pencil color={colors.muted} size={16} />
+                              </Pressable>
+                              <Pressable accessibilityLabel={`Archive ${routine.name}`} accessibilityRole="button" hitSlop={8} onPress={() => confirmArchive(routine)} style={styles.editButton}>
+                                <Archive color={colors.muted} size={16} />
+                              </Pressable>
+                            </>
+                          ) : (
+                            <Pressable accessibilityLabel={`Restore ${routine.name}`} accessibilityRole="button" hitSlop={8} onPress={() => changeArchiveStatus(routine, false)} style={styles.editButton}>
+                              <ArchiveRestore color={colors.primary} size={16} />
+                            </Pressable>
+                          )}
                         </View>
                         <View style={styles.sectionHeader}>
                           <Text style={styles.detail}>{habitCount} {habitCount === 1 ? 'habit' : 'habits'}</Text>
                           <Text style={[styles.detail, isDue && styles.progressText]}>
-                            {isDue ? `${completedCount}/${habitCount} done today` : 'Not scheduled today'}
+                            {showArchived ? 'Archived' : isDue ? `${completedCount}/${habitCount} done today` : 'Not scheduled today'}
                           </Text>
                         </View>
-                        <View
+                        {!showArchived && <View
                           accessible
                           accessibilityLabel={`Today's progress for ${routine.name}`}
                           accessibilityRole="progressbar"
@@ -149,17 +201,19 @@ export function RoutinesScreen({ onCreateRoutine, onEditRoutine, userId }: Props
                           style={styles.progressBar}
                         >
                           <View style={[styles.progressFill, { width: `${habitCount ? completedCount / habitCount * 100 : 0}%` }]} />
-                        </View>
+                        </View>}
                       </View>
                     );
                   })}
                 </View>
               );
             })}
-            <Pressable accessibilityRole="button" onPress={onCreateRoutine} style={styles.createButton}>
-              <Plus color={colors.white} size={18} />
-              <Text style={styles.buttonText}>Create Routine</Text>
-            </Pressable>
+            {!showArchived && (
+              <Pressable accessibilityRole="button" onPress={onCreateRoutine} style={styles.createButton}>
+                <Plus color={colors.white} size={18} />
+                <Text style={styles.buttonText}>Create Routine</Text>
+              </Pressable>
+            )}
           </>
         )}
       </ScrollView>

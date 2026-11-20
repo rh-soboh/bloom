@@ -8,6 +8,8 @@ export const styles = StyleSheet.create({
   header: { alignItems: 'center', flexDirection: 'row', gap: 10 },
   title: { color: colors.text, flex: 1, fontSize: 28, fontWeight: '700' },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 22, marginTop: 6 },
+  archiveToggle: { alignSelf: 'flex-end', marginBottom: 16, marginTop: -12, paddingVertical: 8 },
+  archiveToggleText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
   addButton: {
     alignItems: 'center', backgroundColor: colors.lavender, borderRadius: 14,
     height: 40, justifyContent: 'center', width: 40,

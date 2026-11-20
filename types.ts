@@ -17,6 +17,7 @@ export type Routine = {
   schedule_type: 'daily' | 'weekly';
   selected_days: number[]; // 0 = Sunday, 6 = Saturday.
   scheduled_time: string | null;
+  is_archived: boolean;
 
   habits: Habit[];
 };

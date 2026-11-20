@@ -18,7 +18,7 @@ const habitDelete = jest.fn();
 const onSaved = jest.fn();
 
 const existingRoutine: Routine = {
-  id: 'existing-routine', name: 'Study', schedule_type: 'weekly', selected_days: [1, 3],
+  id: 'existing-routine', name: 'Study', schedule_type: 'weekly', selected_days: [1, 3], is_archived: false,
   scheduled_time: '09:30:00',
   habits: [{ id: 'existing-habit', title: 'Read notes', habit_completions: [
     { id: 'completion-1', completed_on: '2026-11-09' },

@@ -1,4 +1,5 @@
 import { AppState, type AppStateStatus } from 'react-native';
+import { Alert } from 'react-native';
 import { act, render, screen, userEvent } from '@testing-library/react-native';
 
 import { supabase } from '../lib/supabase';
@@ -9,13 +10,13 @@ jest.mock('../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 
 const routines: Routine[] = [
   {
-    id: 'daily', name: 'Morning', schedule_type: 'daily', selected_days: [], scheduled_time: '09:30:00',
+    id: 'daily', name: 'Morning', schedule_type: 'daily', selected_days: [], scheduled_time: '09:30:00', is_archived: false,
     habits: [{ id: 'habit-1', title: 'Read', habit_completions: [
       { id: 'completion-1', completed_on: '2026-11-09' },
     ] }],
   },
   {
-    id: 'weekly', name: 'Study', schedule_type: 'weekly', selected_days: [0, 2], scheduled_time: null,
+    id: 'weekly', name: 'Study', schedule_type: 'weekly', selected_days: [0, 2], scheduled_time: null, is_archived: false,
     habits: [
       { id: 'habit-2', title: 'Revise', habit_completions: [] },
       { id: 'habit-3', title: 'Practise', habit_completions: [] },
@@ -34,9 +35,13 @@ beforeEach(() => {
     onAppStateChange = listener;
     return { remove: jest.fn() };
   });
+  jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   order.mockResolvedValue({ data: routines, error: null });
   filterByUser.mockReturnValue({ order });
-  (supabase!.from as jest.Mock).mockReturnValue({ select: () => ({ eq: filterByUser }) });
+  (supabase!.from as jest.Mock).mockImplementation(() => ({
+    select: () => ({ eq: filterByUser }),
+    update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
+  }));
 });
 
 afterEach(() => {
@@ -101,4 +106,36 @@ test('passes the selected routine to the edit form', async () => {
   await user.press(screen.getByRole('button', { name: 'Edit Study' }));
 
   expect(onEditRoutine).toHaveBeenCalledWith(routines[1]);
+});
+
+test('confirms archiving and lets the user find the routine to restore', async () => {
+  order.mockResolvedValueOnce({ data: routines, error: null });
+  order.mockResolvedValueOnce({ data: routines.map((routine) => ({
+    ...routine, is_archived: routine.id === 'weekly',
+  })), error: null });
+  const user = userEvent.setup();
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={jest.fn()} userId="user-1" />);
+  await user.press(screen.getByRole('button', { name: 'Archive Study' }));
+  expect(Alert.alert).toHaveBeenCalledWith('Archive routine?', expect.any(String), expect.any(Array));
+
+  const actions = (Alert.alert as jest.Mock).mock.calls[0][2];
+  await act(async () => actions[1].onPress());
+  expect(screen.queryByText('Study')).toBeNull();
+  await user.press(screen.getByRole('button', { name: 'Show archived routines' }));
+  expect(screen.getByText('Study')).toBeOnTheScreen();
+  expect(screen.getByText('Archived')).toBeOnTheScreen();
+});
+
+test('restores an archived routine to the active list', async () => {
+  order.mockResolvedValueOnce({ data: [{ ...routines[1], is_archived: true }], error: null });
+  order.mockResolvedValueOnce({ data: routines, error: null });
+  const user = userEvent.setup();
+  await render(<RoutinesScreen onCreateRoutine={jest.fn()} onEditRoutine={jest.fn()} userId="user-1" />);
+  await user.press(screen.getByRole('button', { name: 'Show archived routines' }));
+  await user.press(screen.getByRole('button', { name: 'Restore Study' }));
+
+  expect(screen.getByText('No archived routines')).toBeOnTheScreen();
+  await user.press(screen.getByRole('button', { name: 'Show active routines' }));
+  expect(screen.getByText('Study')).toBeOnTheScreen();
+  expect(screen.queryByText('Archived')).toBeNull();
 });

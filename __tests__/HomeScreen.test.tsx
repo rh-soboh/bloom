@@ -9,22 +9,24 @@ jest.mock('../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 
 const routines: Routine[] = [
   {
-    id: 'daily', name: 'Morning', schedule_type: 'daily', selected_days: [], scheduled_time: null,
+    id: 'daily', name: 'Morning', schedule_type: 'daily', selected_days: [], scheduled_time: null, is_archived: false,
     habits: [{ id: 'daily-habit', title: 'Daily reading', habit_completions: [
       { id: 'completion-1', completed_on: '2026-11-09' },
     ] }],
   },
   {
-    id: 'monday', name: 'Monday study', schedule_type: 'weekly', selected_days: [1], scheduled_time: null,
+    id: 'monday', name: 'Monday study', schedule_type: 'weekly', selected_days: [1], scheduled_time: null, is_archived: false,
     habits: [{ id: 'monday-habit', title: 'Monday revision', habit_completions: [] }],
   },
   {
-    id: 'tuesday', name: 'Tuesday study', schedule_type: 'weekly', selected_days: [2], scheduled_time: null,
+    id: 'tuesday', name: 'Tuesday study', schedule_type: 'weekly', selected_days: [2], scheduled_time: null, is_archived: false,
     habits: [{ id: 'tuesday-habit', title: 'Tuesday exercise', habit_completions: [] }],
   },
 ];
 
 const order = jest.fn();
+const routineFilters = jest.fn();
+const archivedFilter = jest.fn();
 const insertCompletion = jest.fn();
 let onAppStateChange: (state: AppStateStatus) => void;
 
@@ -39,8 +41,10 @@ beforeEach(() => {
   insertCompletion.mockResolvedValue({ error: null });
   (supabase!.from as jest.Mock).mockImplementation((table: string) => {
     if (table === 'habit_completions') return { insert: insertCompletion };
-    return { select: () => ({ eq: () => ({ order }) }) };
+    return { select: () => ({ eq: routineFilters }) };
   });
+  routineFilters.mockReturnValue({ eq: archivedFilter });
+  archivedFilter.mockReturnValue({ order });
 });
 
 afterEach(() => {
@@ -55,6 +59,8 @@ test('shows daily and selected weekly habits and counts only those habits', asyn
   expect(screen.getByRole('checkbox', { name: 'Monday revision' })).toBeOnTheScreen();
   expect(screen.queryByText('Tuesday exercise')).toBeNull();
   expect(screen.getByText('1/2')).toBeOnTheScreen();
+  expect(routineFilters).toHaveBeenNthCalledWith(1, 'user_id', 'user-1');
+  expect(archivedFilter).toHaveBeenCalledWith('is_archived', false);
 });
 
 test('distinguishes no routines from routines not scheduled today', async () => {

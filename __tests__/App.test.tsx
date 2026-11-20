@@ -32,7 +32,7 @@ beforeEach(() => {
     data: { subscription: { unsubscribe: jest.fn() } },
   });
   savedRoutine = {
-    id: 'routine-1', name: 'Study', schedule_type: 'daily', selected_days: [], scheduled_time: null,
+    id: 'routine-1', name: 'Study', schedule_type: 'daily', selected_days: [], scheduled_time: null, is_archived: false,
     habits: [{ id: 'habit-1', title: 'Read notes', habit_completions: [] }],
   };
   order.mockImplementation(async () => ({ data: [savedRoutine], error: null }));
